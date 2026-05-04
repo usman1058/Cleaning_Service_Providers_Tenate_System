@@ -1,0 +1,336 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model with authentication and role-based access
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("CLIENT") // ADMIN, VENDOR, CLIENT
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  serviceRequests    ServiceRequest[]
+  receipts           Receipt[]
+  vendorProfile      VendorProfile?
+  vendorApplications VendorApplication[]
+  vendorContracts    VendorContract[]
+  serviceAssignments ServiceAssignment[]
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+  tickets            Ticket[]
+
+  @@map("users")
+}
+
+// System settings for configuration
+model SystemSettings {
+  id          String   @id @default(cuid())
+  key         String   @unique // e.g., 'maxUploadFileSize', 'maxContractFileSize'
+  value       String // Store as string to accommodate various types
+  description String?
+  category    String? // e.g., 'upload', 'security', 'general'
+  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+
+  @@map("system_settings")
+}
+
+// Service categories (main categories)
+model ServiceCategory {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  icon         String?
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  subcategories ServiceSubcategory[]
+  services      Service[]
+
+  @@map("service_categories")
+}
+
+// Service subcategories (sub-categories within main categories)
+model ServiceSubcategory {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  description  String?
+  categoryId   String
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  category ServiceCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  services Service[]
+
+  @@unique([categoryId, slug])
+  @@map("service_subcategories")
+}
+
+// Service model
+model Service {
+  id            String  @id @default(cuid())
+  name          String
+  slug          String  @unique
+  description   String
+  startingPrice Float
+  duration      String?
+  imageUrl      String?
+  isActive      Boolean @default(true)
+  categoryId    String?
+  subcategoryId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  serviceRequests ServiceRequest[]
+  category        ServiceCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory     ServiceSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@map("services")
+}
+
+// Service request (booking)
+model ServiceRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  serviceId       String?
+  name            String
+  email           String
+  phone           String
+  location        String
+  preferredDate   DateTime?
+  preferredTime   String?
+  additionalNotes String?
+  status          String    @default("PENDING_VERIFICATION")
+  scheduledDate   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service    Service?           @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  receipt    Receipt?
+  assignment ServiceAssignment?
+
+  @@index([userId])
+  @@index([serviceId])
+  @@index([status])
+  @@map("service_requests")
+}
+
+// Receipt for completed services
+model Receipt {
+  id               String    @id @default(cuid())
+  serviceRequestId String    @unique
+  fileUrl          String
+  fileSize         Int?
+  fileName         String?
+  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminRemarks     String?
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  uploadedBy       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  uploader       User?          @relation(fields: [uploadedBy], references: [id], onDelete: SetNull)
+
+  @@index([serviceRequestId])
+  @@index([status])
+  @@map("receipts")
+}
+
+// Service assignment to vendors
+model ServiceAssignment {
+  id               String    @id @default(cuid())
+  serviceRequestId String    @unique
+  vendorId         String
+  status           String    @default("ASSIGNED") // ASSIGNED, IN_PROGRESS, COMPLETED
+  vendorNotes      String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  serviceRequest ServiceRequest @relation(fields: [serviceRequestId], references: [id], onDelete: Cascade)
+  vendor         User           @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  tickets        Ticket[]
+
+  @@index([serviceRequestId])
+  @@index([vendorId])
+  @@index([status])
+  @@map("service_assignments")
+}
+
+// Vendor profile
+model VendorProfile {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  companyName      String
+  businessType     String?
+  serviceLocations String? // JSON string of locations
+  experienceYears  Int?
+  description      String?
+  status           String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  adminRemarks     String?
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("vendor_profiles")
+}
+
+// Vendor application (registration form)
+model VendorApplication {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  contactName      String
+  email            String
+  phone            String
+  address          String
+  businessName     String
+  businessType     String
+  serviceLocations String? // JSON string of locations
+  servicesOffered  String?
+  experience       String?
+  availability     String? // JSON string of availability data
+  identityDocUrl   String?
+  licenseDocUrl    String?
+  contractDocUrl   String?
+  status           String    @default("PENDING") // PENDING, UNDER_REVIEW, APPROVED, REJECTED
+  adminRemarks     String?
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("vendor_applications")
+}
+
+// Vendor contracts uploaded by admin
+model VendorContract {
+  id          String    @id @default(cuid())
+  vendorId    String
+  contractUrl String
+  fileSize    Int?
+  fileName    String?
+  version     Int       @default(1)
+  isActive    Boolean   @default(true)
+  uploadedBy  String? // Admin user ID
+  uploadedAt  DateTime  @default(now())
+  expiresAt   DateTime?
+
+  // Relations
+  vendor User @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
+  @@index([isActive])
+  @@map("vendor_contracts")
+}
+
+// Audit log for tracking admin actions
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String // CREATE, UPDATE, DELETE, etc.
+  entityType String // SERVICE, USER, CATEGORY, etc.
+  entityId   String // ID of the entity
+  userId     String
+  userName   String
+  userEmail  String
+  userRole   String
+  details    String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// Notification model for system notifications
+model Notification {
+  id                String    @id @default(cuid())
+  userId            String
+  title             String
+  message           String
+  type              String    @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead            Boolean   @default(false)
+  relatedEntityType String?   // SERVICE_REQUEST, RECEIPT, TICKET, etc.
+  relatedEntityId   String?
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+// Ticket model for support tickets
+model Ticket {
+  id                String    @id @default(cuid())
+  userId            String
+  subject           String
+  category          String    // SERVICE_ISSUE, PAYMENT_PROBLEM, TECHNICAL, OTHER
+  description       String
+  status            String    @default("OPEN") // OPEN, IN_REVIEW, RESOLVED, CLOSED
+  priority          String    @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  resolutionNotes   String?
+  relatedEntityType String?   // ASSIGNMENT, SERVICE_REQUEST, etc.
+  relatedEntityId   String?
+  assignmentId      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignment ServiceAssignment? @relation(fields: [assignmentId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("tickets")
+}
