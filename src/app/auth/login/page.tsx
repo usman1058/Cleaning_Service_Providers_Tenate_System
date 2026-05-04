@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Sparkles } from 'lucide-react'
 
 function LoginForm() {
   const router = useRouter()
@@ -36,11 +36,9 @@ function LoginForm() {
       if (result?.error) {
         setError('Invalid email or password')
       } else if (result?.ok) {
-        // Fetch user session to get role information
         const sessionResponse = await fetch('/api/auth/session')
         const sessionData = await sessionResponse.json()
 
-        // Determine the correct dashboard based on user role
         let targetUrl = callbackUrl || '/'
 
         if (sessionData?.user?.role) {
@@ -70,11 +68,15 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Welcome Back</CardTitle>
-          <CardDescription className="text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/5 p-4">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(5,150,105,0.08),transparent_50%)]" />
+      <Card className="w-full max-w-md relative">
+        <CardHeader className="space-y-1 text-center">
+          <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+            <Sparkles className="h-7 w-7 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
+          <CardDescription>
             Sign in to your Global Green Services account
           </CardDescription>
         </CardHeader>
@@ -116,7 +118,7 @@ function LoginForm() {
           <CardFooter className="flex flex-col space-y-4">
             <Button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
+              className="w-full bg-primary hover:bg-primary/90"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -130,7 +132,7 @@ function LoginForm() {
             </Button>
 
             <div className="text-sm text-center space-y-2">
-              <Link href="/auth/signup" className="text-emerald-600 hover:underline">
+              <Link href="/auth/signup" className="text-primary hover:underline">
                 Don't have an account? Sign up
               </Link>
             </div>

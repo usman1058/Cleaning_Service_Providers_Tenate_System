@@ -62,31 +62,31 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
       {/* Main Content */}
       <section className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
           {/* Back Button */}
-          <Link href="/" className="inline-flex items-center text-emerald-600 hover:underline mb-6">
+          <Link href="/" className="inline-flex items-center text-primary hover:underline mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Home
           </Link>
 
           {/* Page Header */}
           <div className="text-center mb-8">
-            <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-4xl font-bold mb-4">
               Contact Us
             </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300">
+            <p className="text-xl text-muted-foreground">
               Have questions or need support? We're here to help.
             </p>
           </div>
 
           {/* Info Alert */}
-          <Alert className="mb-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-            <AlertDescription className="text-blue-800 dark:text-blue-200">
+          <Alert className="mb-6 bg-primary/5 border-primary/20">
+            <AlertDescription>
               For service-related issues, please log in to your dashboard and submit a support ticket.
             </AlertDescription>
           </Alert>
@@ -95,7 +95,7 @@ export default function ContactPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Mail className="h-6 w-6 text-emerald-600" />
+                <Mail className="h-6 w-6 text-primary" />
                 Send Us a Message
               </CardTitle>
               <CardDescription>
@@ -105,8 +105,8 @@ export default function ContactPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 {success && (
-                  <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
-                    <AlertDescription className="text-emerald-800 dark:text-emerald-200">
+                  <Alert className="bg-primary/10 border-primary/20">
+                    <AlertDescription>
                       Message sent successfully! We'll get back to you within 24 hours. Redirecting to home...
                     </AlertDescription>
                   </Alert>
@@ -198,7 +198,7 @@ export default function ContactPage() {
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 py-6"
+                  className="w-full bg-primary hover:bg-primary/90 py-6"
                 >
                   {submitting ? (
                     <>
@@ -223,33 +223,33 @@ export default function ContactPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Phone className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                  <Phone className="h-5 w-5 text-primary flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Phone Support</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">+1 (555) 123-4567</p>
+                    <p className="font-medium">Phone Support</p>
+                    <p className="text-sm text-muted-foreground">+1 (555) 123-4567</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <Mail className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                  <Mail className="h-5 w-5 text-primary flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Email Support</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">support@greenservices.com</p>
+                    <p className="font-medium">Email Support</p>
+                    <p className="text-sm text-muted-foreground">support@greenservices.com</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <MapPin className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                <div className="flex items-center gap-4 p-4 bg-muted/50 rounded-lg">
+                  <MapPin className="h-5 w-5 text-primary flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-white">Business Hours</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-300">Mon-Fri: 8AM - 6PM EST</p>
+                    <p className="font-medium">Business Hours</p>
+                    <p className="text-sm text-muted-foreground">Mon-Fri: 8AM - 6PM EST</p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 pt-6 border-t">
-                <p className="text-center text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-center text-sm text-muted-foreground">
                   For immediate assistance with an active service, please submit a support ticket through your dashboard.
                 </p>
               </div>
@@ -259,8 +259,8 @@ export default function ContactPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 text-center text-gray-400">
+      <footer className="bg-card border-t py-8">
+        <div className="container mx-auto px-4 text-center text-muted-foreground">
           <p>© {new Date().getFullYear()} Global Green Services. All rights reserved.</p>
         </div>
       </footer>
