@@ -7,7 +7,7 @@ export async function GET(
 ) {
   try {
     const { slug } = await params
-    const service = await db.service.findUnique({
+    const service = await db.service.findFirst({
       where: {
         slug,
         isActive: true,

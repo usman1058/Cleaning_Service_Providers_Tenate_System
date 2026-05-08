@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { db } from '@/lib/db'
+import { createNotification } from '@/lib/notification'
 
 export async function POST(request: NextRequest) {
   try {
@@ -43,6 +44,14 @@ export async function POST(request: NextRequest) {
         email: true,
         role: true,
       }
+    })
+
+    // Create welcome notification
+    await createNotification({
+      userId: user.id,
+      title: 'Welcome to Global Green Services!',
+      message: `Hi ${user.name}, your account has been successfully created. Explore our services and book your first cleaning today!`,
+      type: 'SUCCESS',
     })
 
     return NextResponse.json({

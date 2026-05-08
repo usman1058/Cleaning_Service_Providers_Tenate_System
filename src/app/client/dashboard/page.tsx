@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,15 +25,21 @@ interface ServiceRequest {
 
 export default function ClientDashboard() {
   const { data: session } = useSession()
+  const searchParams = useSearchParams()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentServices, setRecentServices] = useState<ServiceRequest[]>([])
   const [loading, setLoading] = useState(true)
+  const [showCompleteProfilePrompt, setShowCompleteProfilePrompt] = useState(false)
 
   useEffect(() => {
     if (session?.user) {
       fetchDashboardData()
     }
   }, [session])
+
+  useEffect(() => {
+    setShowCompleteProfilePrompt(searchParams.get('completeProfile') === '1')
+  }, [searchParams])
 
   const fetchDashboardData = async () => {
     try {
@@ -96,6 +103,23 @@ export default function ClientDashboard() {
           Here's an overview of your cleaning services
         </p>
       </div>
+
+      {showCompleteProfilePrompt && (
+        <Card className="mb-8 border-amber-300 bg-amber-50 dark:bg-amber-950/20">
+          <CardContent className="py-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-200">Complete your profile to secure your account</p>
+              <p className="text-sm text-amber-800 dark:text-amber-300">Add a password and update your details so you can track purchases and manage future bookings.</p>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/client/profile?setup=1">
+                <Button className="bg-amber-600 hover:bg-amber-700 text-white">Complete Profile</Button>
+              </Link>
+              <Button variant="outline" onClick={() => setShowCompleteProfilePrompt(false)}>Later</Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats Cards */}
       <div className="grid md:grid-cols-3 gap-6 mb-8">

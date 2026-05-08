@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { createNotification } from '@/lib/notification'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
         id: true,
         name: true,
         email: true,
+        password: true,
         role: true,
         createdAt: true,
         updatedAt: true,
@@ -33,7 +35,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ user })
+    return NextResponse.json({
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      },
+      hasPassword: !!user.password,
+    })
   } catch (error) {
     console.error('Failed to fetch profile:', error)
     return NextResponse.json(
@@ -62,6 +74,14 @@ export async function PUT(request: NextRequest) {
       data: {
         name,
       },
+    })
+
+    // Create notification
+    await createNotification({
+      userId: session.user.id,
+      title: 'Profile Updated',
+      message: 'Your profile details have been successfully updated.',
+      type: 'SUCCESS',
     })
 
     return NextResponse.json({ success: true, message: 'Profile updated successfully' })

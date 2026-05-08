@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { createNotification } from '@/lib/notification'
 
 export async function GET() {
   try {
@@ -45,6 +46,8 @@ export async function PUT(request: Request) {
     }
 
     const updateData: { name?: string; password?: string } = {}
+    let notificationTitle = 'Profile Updated'
+    let notificationMessage = 'Your admin profile details have been updated successfully.'
 
     if (name) {
       updateData.name = name
@@ -56,11 +59,21 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: 'Current password is incorrect' }, { status: 400 })
       }
       updateData.password = await bcrypt.hash(newPassword, 12)
+      notificationTitle = 'Password Updated'
+      notificationMessage = 'Your admin account password has been changed successfully.'
     }
 
     await db.user.update({
       where: { id: session.user.id },
       data: updateData,
+    })
+
+    // Create notification
+    await createNotification({
+      userId: session.user.id,
+      title: notificationTitle,
+      message: notificationMessage,
+      type: 'SUCCESS',
     })
 
     return NextResponse.json({ message: 'Profile updated successfully' })

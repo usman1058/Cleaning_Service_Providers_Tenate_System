@@ -139,11 +139,11 @@ export default function SignupPage() {
             </Button>
 
             <div className="text-sm text-center space-y-2">
-              <Link href="/auth/login" className="text-emerald-600 hover:underline">
+              <Link href="/auth/login" className="text-primary hover:underline">
                 Already have an account? Sign in
               </Link>
               <div className="pt-2 border-t">
-                <Link href="/vendor/register" className="text-emerald-600 hover:underline block">
+                <Link href="/vendor/register" className="text-primary hover:underline block">
                   Want to become a vendor? Apply here
                 </Link>
               </div>

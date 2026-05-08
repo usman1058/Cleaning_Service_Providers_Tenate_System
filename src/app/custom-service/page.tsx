@@ -70,20 +70,20 @@ export default function CustomServicePage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="container mx-auto px-4 max-w-md">
           <Card>
             <CardContent className="pt-6">
               <div className="text-center">
-                <CheckCircle2 className="h-16 w-16 text-emerald-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <CheckCircle2 className="h-16 w-16 text-primary mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-foreground mb-2">
                   Request Submitted!
                 </h2>
-                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                <p className="text-muted-foreground mb-4">
                   Your custom service request has been received. Our team will review it and get back to you with a customized quote.
                 </p>
-                <Loader2 className="h-6 w-6 animate-spin text-emerald-600 mx-auto" />
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" />
+                <p className="text-sm text-muted-foreground mt-2">
                   Redirecting to home page...
                 </p>
               </div>
@@ -95,24 +95,24 @@ export default function CustomServicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
       {/* Main Content */}
       <section className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
-          <Link href="/services" className="inline-flex items-center text-emerald-600 hover:underline mb-6">
+          <Link href="/services" className="inline-flex items-center text-primary hover:underline mb-6">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Services
           </Link>
 
           {/* Page Header */}
           <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-4xl font-bold text-foreground mb-4">
               Request Custom Service
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
+            <p className="text-lg text-muted-foreground">
               Have a unique cleaning need? Tell us about it and we'll create a tailored solution for you.
             </p>
           </div>
@@ -142,7 +142,7 @@ export default function CustomServicePage() {
 
                 {/* Contact Information */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
                     <FileText className="h-5 w-5" />
                     Contact Information
                   </h3>
@@ -188,7 +188,7 @@ export default function CustomServicePage() {
 
                 {/* Service Description */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
                     <FileText className="h-5 w-5" />
                     Service Details
                   </h3>
@@ -204,7 +204,7 @@ export default function CustomServicePage() {
                       rows={6}
                       required
                     />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-muted-foreground">
                       Be as specific as possible. Include details about the size of the space, the type of cleaning required, any special equipment needed, etc.
                     </p>
                   </div>
@@ -223,7 +223,7 @@ export default function CustomServicePage() {
 
                 {/* Location & Schedule */}
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <h3 className="font-semibold text-foreground flex items-center gap-2">
                     <MapPin className="h-5 w-5" />
                     Location & Schedule
                   </h3>
@@ -281,7 +281,7 @@ export default function CustomServicePage() {
                 <div className="flex flex-col gap-4">
                   <Button
                     type="submit"
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 py-6 text-lg"
+                    className="w-full bg-primary py-6 text-lg"
                     disabled={submitting}
                   >
                     {submitting ? (
@@ -294,7 +294,7 @@ export default function CustomServicePage() {
                     )}
                   </Button>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-300 text-center">
+                  <p className="text-sm text-muted-foreground text-center">
                     Your request will be reviewed by our team. We'll contact you with a detailed quote and timeline.
                   </p>
                 </div>
@@ -305,7 +305,7 @@ export default function CustomServicePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8">
+      <footer className="bg-card text-white py-8">
         <div className="container mx-auto px-4 text-center text-gray-400">
           <p>© {new Date().getFullYear()} Global Green Services. All rights reserved.</p>
         </div>

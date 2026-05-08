@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import GoogleProvider from "next-auth/providers/google"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
+import { verifyGuestAuthToken } from "@/lib/guest-auth-token"
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,9 +15,30 @@ export const authOptions: NextAuthOptions = {
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        password: { label: "Password", type: "password" },
+        guestToken: { label: "Guest Token", type: "text" }
       },
       async authorize(credentials) {
+        if (credentials?.guestToken) {
+          const guestPayload = verifyGuestAuthToken(credentials.guestToken)
+          if (!guestPayload) {
+            throw new Error("Invalid guest token")
+          }
+
+          const user = await db.user.findUnique({ where: { id: guestPayload.userId } })
+          if (!user || user.email !== guestPayload.email) {
+            throw new Error("Guest account not found")
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            guestBootstrap: true,
+          }
+        }
+
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password required")
         }
@@ -70,6 +92,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
+        token.guestBootstrap = user.guestBootstrap || false
       }
       return token
     },
@@ -81,9 +104,11 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           session.user.id = dbUser.id
           session.user.role = dbUser.role
+          session.user.guestBootstrap = Boolean(token.guestBootstrap)
         } else {
           session.user.id = token.id as string
           session.user.role = token.role as string
+          session.user.guestBootstrap = Boolean(token.guestBootstrap)
         }
       }
       return session

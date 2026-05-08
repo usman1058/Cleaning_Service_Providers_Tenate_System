@@ -30,9 +30,9 @@ export async function GET(request: NextRequest) {
     let service: any = null
     if (booking.serviceId) {
       try {
-        const serviceData = await db.service.findUnique({
-          where: { id: booking.serviceId, isActive: true },
-        })
+          const serviceData = await db.service.findFirst({
+            where: { id: booking.serviceId, isActive: true },
+          })
         if (serviceData) {
           service = {
             id: serviceData.id,

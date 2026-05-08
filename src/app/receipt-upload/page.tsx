@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Sparkles, Upload, CheckCircle2, AlertCircle, Loader2, Info } from 'lucide-react'
 import { Navbar } from '@/components/shared/navbar'
-import { AuthModal } from '@/components/auth/auth-modal'
 
 function ReceiptUploadPage() {
   const router = useRouter()
@@ -24,7 +23,6 @@ function ReceiptUploadPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [showAuthModal, setShowAuthModal] = useState(false)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -104,13 +102,34 @@ function ReceiptUploadPage() {
       if (typeof window !== 'undefined') {
         localStorage.setItem('pendingReceiptUploadRequestId', requestId || '')
       }
-      // Show auth modal if not logged in, otherwise redirect to dashboard
-      setTimeout(() => {
+
+      setTimeout(async () => {
         if (session?.user) {
           router.push('/client/dashboard')
-        } else {
-          setShowAuthModal(true)
+          return
         }
+
+        const guestToken = typeof window !== 'undefined' && requestId
+          ? localStorage.getItem(`guestAutoLogin:${requestId}`)
+          : null
+
+        if (guestToken) {
+          const result = await signIn('credentials', {
+            guestToken,
+            redirect: false,
+          })
+
+          if (result?.ok) {
+            if (typeof window !== 'undefined' && requestId) {
+              localStorage.removeItem(`guestAutoLogin:${requestId}`)
+            }
+            router.push('/client/dashboard?completeProfile=1')
+            return
+          }
+        }
+
+        const callbackUrl = encodeURIComponent(`/receipt-upload?request=${requestId}`)
+        router.push(`/auth/login?callbackUrl=${callbackUrl}`)
       }, 2000)
     } catch (error) {
       setError('An error occurred. Please try again.')
@@ -278,22 +297,6 @@ function ReceiptUploadPage() {
           </div>
         </div>
       </section>
-
-      {/* Auth Modal */}
-      <AuthModal
-        open={showAuthModal}
-        onOpenChange={setShowAuthModal}
-        redirectOnSuccess={true}
-        onSuccess={() => {
-          // After successful login, redirect to upload page
-          if (typeof window !== 'undefined') {
-            const pendingId = localStorage.getItem('pendingReceiptUploadRequestId')
-            if (pendingId) {
-              window.location.href = `/receipt-upload?request=${pendingId}`
-            }
-          }
-        }}
-      />
 
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-8">

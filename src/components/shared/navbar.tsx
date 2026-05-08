@@ -1,9 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Sparkles, Menu, X, Search, User, Bell, LogOut, LayoutDashboard, ChevronDown } from 'lucide-react'
+import { Sparkles, Menu, X, Search, User, Bell, LogOut, LayoutDashboard, ChevronDown, BellRing } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,18 @@ export function Navbar() {
   const { data: session, status } = useSession()
   const [scrolled, setScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    const role = session.user.role?.toLowerCase() || 'client'
+    fetch(`/api/${role}/notifications`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data)) setUnreadCount(data.filter((n: any) => !n.isRead).length)
+      })
+      .catch(() => {})
+  }, [session])
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20)
@@ -51,6 +63,9 @@ export function Navbar() {
   }
 
   const { dashboard, profile } = getLinks()
+  const router = useRouter()
+  
+  console.log('Navbar render - dashboard:', dashboard, 'session:', session?.user?.role)
 
   const getInitials = (name?: string) => {
     if (!name) return 'U'
@@ -134,19 +149,26 @@ export function Navbar() {
               <div className="h-10 w-24 bg-muted rounded-xl animate-pulse" />
             ) : session ? (
               <>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-primary rounded-full border-2 border-background" />
-                  </Button>
-                </motion.div>
+                <button
+                  type="button"
+                  className="relative inline-flex items-center justify-center h-10 w-10 rounded-md hover:bg-muted/50 transition-colors"
+                  onClick={() => {
+                    const role = session.user.role?.toLowerCase() || 'client'
+                    const url = `/${role}/notifications`
+                    console.log('Bell clicked, navigating to:', url)
+                    router.push(url)
+                  }}
+                >
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center bg-primary text-[10px] font-bold text-primary-foreground rounded-full px-1">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex items-center gap-2.5 h-10 px-3 rounded-xl hover:bg-muted/50 transition-colors"
-                    >
+                    <button className="flex items-center gap-2.5 h-10 px-3 rounded-xl hover:bg-muted/50 transition-colors hover:scale-102 active:scale-98">
                       <Avatar className="h-8 w-8 ring-2 ring-primary/20">
                         <AvatarFallback className="bg-gradient-to-br from-primary to-emerald-500 text-white text-sm font-semibold">
                           {getInitials(session.user?.name ?? undefined)}
@@ -156,7 +178,7 @@ export function Navbar() {
                         {session.user?.name?.split(' ')[0] || 'User'}
                       </span>
                       <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    </motion.button>
+                    </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>
@@ -192,34 +214,23 @@ export function Navbar() {
             ) : (
               <>
                 <Link href="/auth/login">
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50">
-                      Login
-                    </Button>
-                  </motion.button>
+                  <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 hover:scale-105 active:scale-98 transition-all">
+                    Login
+                  </Button>
                 </Link>
                 <Link href="/auth/signup">
-                  <motion.button
-                    whileHover={{ scale: 1.02, boxShadow: '0 4px 20px -2px rgba(5, 150, 105, 0.4)' }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
-                      Get Started
-                    </Button>
-                  </motion.button>
+                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm hover:shadow-md hover:scale-105 active:scale-98 transition-all">
+                    Get Started
+                  </Button>
                 </Link>
               </>
             )}
           </div>
 
           {/* Mobile Menu Button */}
-          <motion.button
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            whileTap={{ scale: 0.9 }}
-            className="md:hidden p-2.5 rounded-xl hover:bg-muted transition-colors"
+            className="md:hidden p-2.5 rounded-xl hover:bg-muted transition-colors active:scale-90"
           >
             <AnimatePresence mode="wait">
               {mobileMenuOpen ? (
@@ -232,7 +243,7 @@ export function Navbar() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.button>
+          </button>
         </div>
       </div>
 

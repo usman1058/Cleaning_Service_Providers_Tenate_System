@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { signOut } from 'next-auth/react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -13,6 +14,7 @@ import { Sparkles, Home, FileText, Clock, CheckCircle2, Loader2, User as UserIco
 
 export default function ClientProfilePage() {
   const { data: session, update } = useSession()
+  const searchParams = useSearchParams()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -25,8 +27,14 @@ export default function ClientProfilePage() {
   })
   const [loading, setLoading] = useState(false)
   const [passwordLoading, setPasswordLoading] = useState(false)
+  const [hasPassword, setHasPassword] = useState(true)
+  const [forceSetupMode, setForceSetupMode] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    setForceSetupMode(searchParams.get('setup') === '1')
+  }, [searchParams])
 
   useEffect(() => {
     if (session?.user) {
@@ -35,8 +43,20 @@ export default function ClientProfilePage() {
         email: session.user.email || '',
         phone: '',
       })
+      fetchProfileState()
     }
   }, [session])
+
+  const fetchProfileState = async () => {
+    try {
+      const response = await fetch('/api/client/profile')
+      if (!response.ok) return
+      const data = await response.json()
+      setHasPassword(Boolean(data.hasPassword))
+    } catch (err) {
+      console.error('Failed to fetch profile state:', err)
+    }
+  }
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -91,6 +111,7 @@ export default function ClientProfilePage() {
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword,
+          skipCurrentPassword: forceSetupMode,
         }),
       })
 
@@ -101,7 +122,8 @@ export default function ClientProfilePage() {
         return
       }
 
-      setMessage('Password changed successfully')
+      setMessage(data.message || 'Password updated successfully')
+      setHasPassword(true)
       setPasswordData({
         currentPassword: '',
         newPassword: '',
@@ -259,23 +281,34 @@ export default function ClientProfilePage() {
           {/* Change Password */}
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>Change Password</CardTitle>
+              <CardTitle>{hasPassword && !forceSetupMode ? 'Change Password' : 'Set Password'}</CardTitle>
               <CardDescription>
-                Update your password to keep your account secure
+                {hasPassword && !forceSetupMode
+                  ? 'Update your password to keep your account secure'
+                  : 'Set your first password to secure this account and complete your profile'}
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {(!hasPassword || forceSetupMode) && (
+                <Alert className="mb-4 bg-amber-50 border-amber-200">
+                  <AlertDescription className="text-amber-800">
+                    This account was created during guest booking. Set a new password now. You do not need a current password.
+                  </AlertDescription>
+                </Alert>
+              )}
               <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
-                  <Input
-                    id="currentPassword"
-                    type="password"
-                    value={passwordData.currentPassword}
-                    onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                    required
-                  />
-                </div>
+                {hasPassword && !forceSetupMode && (
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">New Password</Label>
@@ -308,7 +341,7 @@ export default function ClientProfilePage() {
                       Changing...
                     </>
                   ) : (
-                    'Change Password'
+                        hasPassword && !forceSetupMode ? 'Change Password' : 'Set Password'
                   )}
                 </Button>
               </form>

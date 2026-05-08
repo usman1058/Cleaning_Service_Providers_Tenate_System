@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { createNotification } from '@/lib/notification'
 
 export async function PUT(request: NextRequest) {
   try {
@@ -16,11 +17,11 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { currentPassword, newPassword } = body
+    const { currentPassword, newPassword, skipCurrentPassword } = body
 
-    if (!currentPassword || !newPassword) {
+    if (!newPassword) {
       return NextResponse.json(
-        { error: 'Current and new passwords are required' },
+        { error: 'New password is required' },
         { status: 400 }
       )
     }
@@ -38,13 +39,26 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password)
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { error: 'Current password is incorrect' },
-        { status: 400 }
-      )
+    const hasExistingPassword = !!user.password
+
+    const canSkipCurrent = Boolean(skipCurrentPassword) && Boolean(session.user.guestBootstrap)
+
+    if (hasExistingPassword && !canSkipCurrent) {
+      if (!currentPassword) {
+        return NextResponse.json(
+          { error: 'Current password is required' },
+          { status: 400 }
+        )
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcrypt.compare(currentPassword, user.password)
+      if (!isPasswordValid) {
+        return NextResponse.json(
+          { error: 'Current password is incorrect' },
+          { status: 400 }
+        )
+      }
     }
 
     // Hash new password
@@ -58,7 +72,20 @@ export async function PUT(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ success: true, message: 'Password changed successfully' })
+    // Create notification
+    await createNotification({
+      userId: session.user.id,
+      title: hasExistingPassword ? 'Password Changed' : 'Password Set',
+      message: hasExistingPassword 
+        ? 'Your account password was successfully changed. If you did not perform this action, please contact support immediately.' 
+        : 'Your account password has been set successfully. You can now use it to login to your account.',
+      type: 'SUCCESS',
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: hasExistingPassword ? 'Password changed successfully' : 'Password set successfully',
+    })
   } catch (error) {
     console.error('Failed to change password:', error)
     return NextResponse.json(

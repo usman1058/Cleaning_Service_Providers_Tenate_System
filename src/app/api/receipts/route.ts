@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
+import { createNotification } from '@/lib/notification'
 
 export async function POST(request: NextRequest) {
   try {
@@ -62,10 +63,21 @@ export async function POST(request: NextRequest) {
     const filepath = join(uploadsDir, filename)
     await writeFile(filepath, buffer)
 
-    // Create receipt record
-    const receipt = await db.receipt.create({
-      data: {
-        uploadedBy: session?.user?.id || serviceRequest.userId || '',
+    // Create or replace receipt record for this booking
+    const receipt = await db.receipt.upsert({
+      where: { serviceRequestId },
+      update: {
+        uploadedBy: session?.user?.id || serviceRequest.userId || null,
+        fileUrl: `/uploads/receipts/${filename}`,
+        fileName: file.name,
+        fileSize: file.size,
+        status: 'PENDING',
+        adminRemarks: null,
+        reviewedBy: null,
+        reviewedAt: null,
+      },
+      create: {
+        uploadedBy: session?.user?.id || serviceRequest.userId || null,
         serviceRequestId,
         fileUrl: `/uploads/receipts/${filename}`,
         fileName: file.name,
@@ -73,6 +85,18 @@ export async function POST(request: NextRequest) {
         status: 'PENDING',
       },
     })
+
+    const userId = session?.user?.id || serviceRequest.userId
+    if (userId) {
+      await createNotification({
+        userId,
+        title: 'Receipt Uploaded',
+        message: 'Your payment receipt has been uploaded successfully and is pending verification by our team.',
+        type: 'SUCCESS',
+        relatedEntityType: 'RECEIPT',
+        relatedEntityId: receipt.id,
+      })
+    }
 
     return NextResponse.json({
       id: receipt.id,
