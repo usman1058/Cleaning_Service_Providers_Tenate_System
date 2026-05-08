@@ -75,6 +75,8 @@ export function VendorDashboardLayout({ children }: { children: React.ReactNode 
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
 
+  const [unreadCount, setUnreadCount] = useState(0)
+
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768)
@@ -85,6 +87,16 @@ export function VendorDashboardLayout({ children }: { children: React.ReactNode 
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
+
+  useEffect(() => {
+    if (!session?.user?.id) return
+    fetch('/api/vendor/notifications')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data)) setUnreadCount(data.filter((n: any) => !n.isRead).length)
+      })
+      .catch(() => {})
+  }, [session])
 
   const getInitials = (name?: string) => {
     if (!name) return 'V'
@@ -214,9 +226,15 @@ export function VendorDashboardLayout({ children }: { children: React.ReactNode 
             </div>
 
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-primary rounded-full border-2 border-card" />
+              <Button variant="ghost" size="icon" className="relative" asChild>
+                <Link href="/vendor/notifications">
+                  <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 h-4 min-w-[16px] px-1 bg-primary text-[10px] font-bold text-primary-foreground rounded-full border-2 border-card flex items-center justify-center">
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
               </Button>
               <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
                 <Link href="/">
