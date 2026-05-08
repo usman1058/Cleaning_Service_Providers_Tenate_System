@@ -17,6 +17,7 @@ model User {
   password  String
   name      String
   role      String   @default("CLIENT") // ADMIN, VENDOR, CLIENT
+  permissions String?   // Comma-separated permissions for ADMINs
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -196,8 +197,12 @@ model VendorProfile {
   businessType     String?
   serviceLocations String? // JSON string of locations
   experienceYears  Int?
+  teamSize         Int?
+  dailyCapacity    Int?
+  availability     String?   // JSON or text schedule
   description      String?
   status           String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  isActive         Boolean   @default(true)
   adminRemarks     String?
   reviewedBy       String?
   reviewedAt       DateTime?
@@ -263,6 +268,23 @@ model VendorContract {
   @@index([vendorId])
   @@index([isActive])
   @@map("vendor_contracts")
+}
+
+// Global contract templates for vendors to download during registration
+model ContractTemplate {
+  id          String    @id @default(cuid())
+  title       String
+  fileUrl     String
+  fileSize    Int?
+  fileName    String?
+  version     Int       @default(1)
+  isActive    Boolean   @default(true)
+  uploadedBy  String? // Admin user ID
+  uploadedAt  DateTime  @default(now())
+  description String?
+
+  @@index([isActive])
+  @@map("contract_templates")
 }
 
 // Audit log for tracking admin actions

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession, signOut } from 'next-auth/react'
-import { Sparkles, LayoutDashboard, Home, FileText, Users, CheckCircle2, Calendar, Clock, Settings, BarChart3, Receipt, MapPin, Phone, Mail, LogOut, Menu, X, Bell, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Sparkles, LayoutDashboard, Home, FileText, Users, User, CheckCircle2, Calendar, Clock, Settings, BarChart3, Receipt, MapPin, Phone, Mail, LogOut, Menu, X, Bell, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
@@ -84,6 +84,11 @@ const sidebarItems: SidebarItem[] = [
     section: 'System',
   },
   {
+    title: 'Profile & Team',
+    href: '/admin/profile',
+    icon: User,
+  },
+  {
     title: 'Settings',
     href: '/admin/settings',
     icon: Settings,
@@ -124,6 +129,27 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
   }
 
+  const canAccess = (item: SidebarItem) => {
+    if (!session?.user) return false
+    const permissions = (session.user as any).permissions?.split(',') || []
+    
+    // Super admins (those with manage_admins) can see everything
+    if (permissions.includes('manage_admins')) return true
+
+    if (item.href === '/admin/dashboard') return true
+    if (item.href === '/admin/profile') return true
+    
+    if (item.href.includes('vendors') || item.href.includes('contracts')) return permissions.includes('manage_vendors')
+    if (item.href.includes('clients')) return permissions.includes('manage_clients')
+    if (item.href.includes('services') || item.href.includes('categories')) return permissions.includes('manage_services')
+    if (item.href.includes('reports') || item.href.includes('monitoring') || item.href.includes('audit-log')) return permissions.includes('view_reports')
+    if (item.href.includes('tickets')) return true // Allow all admins to see tickets? Or add a permission for it.
+    
+    return true
+  }
+
+  const filteredSidebarItems = sidebarItems.filter(canAccess)
+
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
@@ -151,9 +177,9 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
 
           {/* Navigation */}
           <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-            {sidebarItems.map((item, idx) => {
+            {filteredSidebarItems.map((item, idx) => {
               const isActive = pathname === item.href
-              const showSection = item.section && (idx === 0 || sidebarItems[idx - 1].section !== item.section)
+              const showSection = item.section && (idx === 0 || filteredSidebarItems[idx - 1].section !== item.section)
 
               return (
                 <div key={item.href}>

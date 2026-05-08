@@ -24,7 +24,9 @@ export default async function middleware(req: NextRequest) {
                        pathname.startsWith('/api/services') ||
                        pathname.startsWith('/api/service-requests') ||
                        pathname.startsWith('/api/receipts') ||
-                       pathname.startsWith('/api/booking-confirmation')
+                       pathname.startsWith('/api/booking-confirmation') ||
+                       pathname.startsWith('/api/contract-templates') ||
+                       pathname.startsWith('/uploads')
 
   if (isPublicPath || isAuthPage) {
     if (isAuth && isAuthPage) {

@@ -65,6 +65,7 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
+          permissions: user.permissions,
         }
       }
     })
@@ -92,7 +93,8 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id
         token.role = user.role
-        token.guestBootstrap = user.guestBootstrap || false
+        token.permissions = (user as any).permissions
+        token.guestBootstrap = (user as any).guestBootstrap || false
       }
       return token
     },
@@ -104,10 +106,12 @@ export const authOptions: NextAuthOptions = {
         if (dbUser) {
           session.user.id = dbUser.id
           session.user.role = dbUser.role
+          session.user.permissions = dbUser.permissions
           session.user.guestBootstrap = Boolean(token.guestBootstrap)
         } else {
           session.user.id = token.id as string
           session.user.role = token.role as string
+          session.user.permissions = token.permissions as string
           session.user.guestBootstrap = Boolean(token.guestBootstrap)
         }
       }

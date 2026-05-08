@@ -10,28 +10,44 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Sparkles, Home, Calendar, Users, LogOut, Loader2, Save, Clock } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Sparkles, Home, Calendar, Users, LogOut, Loader2, Save, Clock, Key, Shield, User, MapPin } from 'lucide-react'
+import { toast } from '@/hooks/use-toast'
 
 interface VendorProfile {
+  id: string
   companyName: string
-  serviceLocations: string
-  teamSize: number
-  dailyCapacity: number
-  availabilitySchedule: string
+  serviceLocations: string | null
+  teamSize: number | null
+  dailyCapacity: number | null
+  availability: string | null
   isActive: boolean
   updatedAt: string
+  user: {
+    name: string
+    email: string
+  }
 }
 
 export default function VendorProfilePage() {
-  const { data: session, update } = useSession()
+  const { data: session } = useSession()
   const [profile, setProfile] = useState<VendorProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [formData, setFormData] = useState({
-    availabilityHours: '',
+  
+  // Forms
+  const [profileData, setProfileData] = useState({
+    name: '',
+    teamSize: '',
+    dailyCapacity: '',
+    availability: '',
   })
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
+  
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  })
 
   useEffect(() => {
     if (session?.user) {
@@ -41,10 +57,17 @@ export default function VendorProfilePage() {
 
   const fetchProfile = async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/vendor/profile')
       if (response.ok) {
         const data = await response.json()
         setProfile(data)
+        setProfileData({
+          name: data.user.name || '',
+          teamSize: (data.teamSize || '').toString(),
+          dailyCapacity: (data.dailyCapacity || '').toString(),
+          availability: data.availability || '',
+        })
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error)
@@ -53,30 +76,66 @@ export default function VendorProfilePage() {
     }
   }
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault()
-    setMessage('')
-    setError('')
     setSaving(true)
 
     try {
       const response = await fetch('/api/vendor/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(profileData),
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        setError(data.error || 'Failed to update profile')
-        return
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to update profile')
       }
 
-      setMessage('Profile updated successfully')
-      await fetchProfile()
+      toast({ title: 'Success', description: 'Profile updated successfully' })
+      fetchProfile()
     } catch (error) {
-      setError('An error occurred. Please try again.')
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update profile',
+        variant: 'destructive'
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({ title: 'Error', description: 'Passwords do not match', variant: 'destructive' })
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch('/api/vendor/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to change password')
+      }
+
+      toast({ title: 'Success', description: 'Password changed successfully' })
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to change password',
+        variant: 'destructive'
+      })
     } finally {
       setSaving(false)
     }
@@ -85,46 +144,17 @@ export default function VendorProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">Loading profile...</p>
-        </div>
+        <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
       </div>
     )
   }
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-gray-600 dark:text-gray-300">
-              Profile not found. Please contact admin.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  if (!profile) return null
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-8 w-8 text-emerald-600" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Global Green Services
-              </h1>
-            </div>
-          </Link>
-        </div>
-      </header>
-
       {/* Navigation Tabs */}
-      <nav className="bg-white dark:bg-gray-950 border-b overflow-x-auto">
+      <nav className="bg-white dark:bg-gray-950 border-b overflow-x-auto sticky top-0 z-40">
         <div className="container mx-auto px-4">
           <div className="flex gap-4">
             <Link href="/vendor/dashboard" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
@@ -147,165 +177,178 @@ export default function VendorProfilePage() {
         </div>
       </nav>
 
-      {/* Main Content */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Vendor Profile
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Manage your company information and service capabilities
-            </p>
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Profile Management</h1>
+              <p className="text-gray-500 mt-1">Manage your company details and account security</p>
+            </div>
+            <Badge variant={profile.isActive ? 'default' : 'secondary'} className="w-fit px-3 py-1">
+              {profile.isActive ? 'Account Active' : 'Account Inactive'}
+            </Badge>
           </div>
 
-          {/* Messages */}
-          {message && (
-            <Alert className="mb-6 bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
-              <AlertDescription className="text-emerald-800 dark:text-emerald-200">
-                {message}
-              </AlertDescription>
-            </Alert>
-          )}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Sidebar info */}
+            <div className="lg:col-span-1 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-emerald-600" />
+                    Company Info
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Company Name</Label>
+                    <p className="font-medium">{profile.companyName}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Email</Label>
+                    <p className="font-medium">{profile.user.email}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-gray-500 uppercase tracking-wider font-semibold flex items-center gap-1">
+                      <MapPin className="h-3 w-3" /> Locations
+                    </Label>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{profile.serviceLocations || 'Not specified'}</p>
+                  </div>
+                  <div className="pt-2 border-t">
+                    <p className="text-[10px] text-gray-400">Member since {new Date(profile.updatedAt).toLocaleDateString()}</p>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {error && (
-            <Alert variant="destructive" className="mb-6">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2 text-red-600">
+                    <LogOut className="h-5 w-5" />
+                    Session
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    variant="outline" 
+                    className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                    onClick={() => signOut()}
+                  >
+                    Logout from Dashboard
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
 
-          {/* Profile Information */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Company Information</CardTitle>
-              <CardDescription>
-                Read-only fields require admin approval to change
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Company Name</Label>
-                  <Input
-                    value={profile.companyName}
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-800"
-                  />
-                </div>
+            {/* Main forms */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Profile Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-emerald-600" />
+                    Edit Details
+                  </CardTitle>
+                  <CardDescription>Update your personal and capacity information</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleProfileSave} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="v-name">Full Name (Contact Person)</Label>
+                      <Input 
+                        id="v-name" 
+                        value={profileData.name} 
+                        onChange={e => setProfileData({...profileData, name: e.target.value})}
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>Service Locations</Label>
-                  <Input
-                    value={profile.serviceLocations}
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-800"
-                  />
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="team-size">Team Size</Label>
+                        <Input 
+                          id="team-size" 
+                          type="number"
+                          value={profileData.teamSize} 
+                          onChange={e => setProfileData({...profileData, teamSize: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="capacity">Daily Capacity (Jobs)</Label>
+                        <Input 
+                          id="capacity" 
+                          type="number"
+                          value={profileData.dailyCapacity} 
+                          onChange={e => setProfileData({...profileData, dailyCapacity: e.target.value})}
+                        />
+                      </div>
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>Team Size</Label>
-                  <Input
-                    type="number"
-                    value={profile.teamSize}
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-800"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="availability">Availability Schedule</Label>
+                      <Textarea 
+                        id="availability" 
+                        placeholder="e.g. Mon-Fri 9AM-6PM, Sat 10AM-2PM"
+                        value={profileData.availability}
+                        onChange={e => setProfileData({...profileData, availability: e.target.value})}
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <Label>Daily Capacity</Label>
-                  <Input
-                    type="number"
-                    value={profile.dailyCapacity}
-                    disabled
-                    className="bg-gray-100 dark:bg-gray-800"
-                  />
-                </div>
-              </div>
+                    <Button type="submit" disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+                      {saving ? 'Saving...' : 'Update Profile'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
 
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    Account Status
-                  </span>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    profile.isActive
-                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100'
-                      : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                  }`}>
-                    {profile.isActive ? 'Active' : 'Inactive'}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                Last Updated: {new Date(profile.updatedAt).toLocaleString()}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Availability Settings */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Availability Schedule</CardTitle>
-              <CardDescription>
-                Update your available hours (pending admin approval)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSave} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="availabilityHours">Preferred Working Hours</Label>
-                  <Input
-                    id="availabilityHours"
-                    value={formData.availabilityHours}
-                    onChange={(e) => setFormData({ ...formData, availabilityHours: e.target.value })}
-                    placeholder="e.g., 9:00 AM - 5:00 PM, Monday - Friday"
-                  />
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    These hours will be visible when admin assigns services
-                  </p>
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={saving}
-                  className="bg-emerald-600 hover:bg-emerald-700"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          {/* Account Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="outline"
-                onClick={() => signOut()}
-                className="border-red-600 text-red-600 hover:bg-red-50 hover:text-red-700"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
-            </CardContent>
-          </Card>
+              {/* Password Form */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Key className="h-5 w-5 text-emerald-600" />
+                    Change Password
+                  </CardTitle>
+                  <CardDescription>Ensure your account is using a long, random password to stay secure.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePasswordChange} className="space-y-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="cur-pass">Current Password</Label>
+                      <Input 
+                        id="cur-pass" 
+                        type="password"
+                        value={passwordData.currentPassword}
+                        onChange={e => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-pass">New Password</Label>
+                        <Input 
+                          id="new-pass" 
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={e => setPasswordData({...passwordData, newPassword: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="conf-pass">Confirm Password</Label>
+                        <Input 
+                          id="conf-pass" 
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={e => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                    <Button type="submit" disabled={saving} variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
+                      Update Password
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
-      </section>
+      </main>
     </div>
   )
 }

@@ -19,7 +19,7 @@ export async function PATCH(
     }
 
     const body = await request.json()
-    const { status, serviceLocations, description, businessName, businessType } = body
+    const { status, serviceLocations, description, businessName, businessType, isActive } = body
 
     await db.vendorProfile.update({
       where: { id },
@@ -29,6 +29,7 @@ export async function PATCH(
         ...(description !== undefined && { description }),
         ...(businessName !== undefined && { businessName }),
         ...(businessType !== undefined && { businessType }),
+        ...(isActive !== undefined && { isActive }),
       },
     })
 

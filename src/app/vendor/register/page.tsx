@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Sparkles, Upload, CheckCircle2, Loader2, ArrowLeft, ArrowRight, Download, FileText } from 'lucide-react'
+import { Sparkles, Upload, CheckCircle2, Loader2, ArrowLeft, ArrowRight, Download, FileText, AlertCircle } from 'lucide-react'
 import { GetMyLocation } from '@/components/shared/get-my-location'
 
 type Step = 1 | 2 | 3 | 4
@@ -83,7 +83,7 @@ export default function VendorRegisterPage() {
   const fetchVendorContracts = async () => {
     try {
       setLoadingContracts(true)
-      const response = await fetch('/api/vendor/contracts')
+      const response = await fetch('/api/contract-templates')
       if (response.ok) {
         const data = await response.json()
         setVendorContracts(data)
@@ -636,60 +636,77 @@ export default function VendorRegisterPage() {
                   </Alert>
 
                   {/* Contract Download Section */}
-                  <div className="space-y-3">
-                    <Label className="text-base font-semibold">Available Contracts</Label>
+                  {/* Contract Download Section */}
+                  <div className="space-y-4">
+                    <Label className="text-base font-bold text-gray-900 dark:text-white">1. Download Agreement</Label>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Download the vendor service agreement, review the terms, sign it, and upload it back.
+                    </p>
+                    
                     {loadingContracts ? (
-                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Loading contracts...
+                      <div className="flex items-center gap-3 p-6 border rounded-xl bg-gray-50 dark:bg-gray-800/50">
+                        <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+                        <span className="text-sm font-medium">Fetching the latest agreement...</span>
                       </div>
                     ) : vendorContracts.length > 0 ? (
-                      <div className="space-y-2">
-                        {vendorContracts.map((contract) => (
+                      <div className="space-y-3">
+                        {vendorContracts.filter(c => c.isActive).slice(0, 1).map((contract) => (
                           <div
                             key={contract.id}
-                            className="flex items-center justify-between p-4 border rounded-lg bg-white dark:bg-gray-800"
+                            className="flex flex-col md:flex-row items-center justify-between p-6 border-2 border-emerald-100 dark:border-emerald-900/30 rounded-2xl bg-emerald-50/30 dark:bg-emerald-950/10 gap-4"
                           >
-                            <div className="flex items-center gap-3">
-                              <FileText className="h-5 w-5 text-emerald-600" />
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+                                <FileText className="h-8 w-8 text-emerald-600" />
+                              </div>
                               <div>
-                                <p className="font-medium text-gray-900 dark:text-white">
-                                  {contract.fileName}
+                                <p className="text-lg font-bold text-gray-900 dark:text-white">
+                                  {contract.title || 'Vendor Service Agreement'}
                                 </p>
                                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  Version {contract.version} • {contract.isActive ? 'Active' : 'Inactive'}
+                                  Version {contract.version} • PDF Document
                                 </p>
                               </div>
                             </div>
                             <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(contract.contractUrl, '_blank')}
+                              variant="default"
+                              size="lg"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 rounded-xl w-full md:w-auto"
+                              onClick={() => window.open(contract.fileUrl || contract.contractUrl, '_blank')}
                             >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
+                              <Download className="h-5 w-5 mr-2" />
+                              Download PDF
                             </Button>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <Alert className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-                        <AlertDescription className="text-blue-800 dark:text-blue-200">
-                          No contracts available yet. You can still upload your signed agreement below.
-                        </AlertDescription>
-                      </Alert>
+                      <div className="p-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl text-center">
+                        <AlertCircle className="h-10 w-10 text-orange-400 mx-auto mb-3" />
+                        <h4 className="font-bold text-gray-900 dark:text-white mb-1">Contract Temporarily Unavailable</h4>
+                        <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                          The service agreement is currently being updated by the administration. You can still upload your signed copy if you have it.
+                        </p>
+                      </div>
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="contractFile">Signed Contract *</Label>
-                    <Input
-                      id="contractFile"
-                      type="file"
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleFileChange('contract', e.target.files?.[0] || null)}
-                      required
-                    />
+                  <div className="space-y-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <Label htmlFor="contractFile" className="text-base font-bold text-gray-900 dark:text-white">2. Upload Signed Copy</Label>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Upload the signed and scanned PDF or image of the agreement.
+                    </p>
+                    <div className="relative">
+                      <Input
+                        id="contractFile"
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="h-14 pt-4 cursor-pointer"
+                        onChange={(e) => handleFileChange('contract', e.target.files?.[0] || null)}
+                        required
+                      />
+                      <Upload className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+                    </div>
                     {formData.contractPreview && (
                       <div className="border rounded-lg p-4 bg-white dark:bg-gray-800">
                         <img

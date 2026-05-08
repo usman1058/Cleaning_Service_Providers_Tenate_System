@@ -21,6 +21,7 @@ async function main() {
   await prisma.serviceSubcategory.deleteMany()
   await prisma.serviceCategory.deleteMany()
   await prisma.systemSettings.deleteMany()
+  await prisma.contractTemplate.deleteMany()
   await prisma.user.deleteMany()
 
   // ==================== USERS ====================
@@ -33,6 +34,7 @@ async function main() {
       password: adminPassword,
       name: 'Sarah Admin',
       role: 'ADMIN',
+      permissions: 'manage_admins,manage_vendors,manage_clients,manage_services,view_reports',
     },
   })
 
@@ -98,6 +100,9 @@ async function main() {
       businessType: 'LLC',
       serviceLocations: JSON.stringify(['New York', 'Brooklyn', 'Queens', 'Manhattan']),
       experienceYears: 8,
+      teamSize: 12,
+      dailyCapacity: 5,
+      availability: 'Mon-Fri 8:00 AM - 6:00 PM',
       description: 'Professional cleaning services with 8+ years of experience in residential and commercial cleaning',
       status: 'APPROVED',
       reviewedBy: admin.id,
@@ -112,6 +117,9 @@ async function main() {
       businessType: 'Corporation',
       serviceLocations: JSON.stringify(['Los Angeles', 'Santa Monica', 'Pasadena']),
       experienceYears: 5,
+      teamSize: 8,
+      dailyCapacity: 3,
+      availability: 'Mon-Sat 9:00 AM - 5:00 PM',
       description: 'Eco-friendly cleaning solutions for homes and offices',
       status: 'APPROVED',
       reviewedBy: admin.id,
@@ -613,6 +621,32 @@ async function main() {
   })
 
   console.log('✅ Created 2 vendor contracts')
+
+  // ==================== CONTRACT TEMPLATES ====================
+  console.log('\n📜 Creating contract templates...')
+
+  await prisma.contractTemplate.createMany({
+    data: [
+      {
+        title: 'Standard Service Agreement',
+        fileUrl: '/uploads/templates/standard-agreement.pdf',
+        fileName: 'standard-service-agreement.pdf',
+        fileSize: 1024000,
+        description: 'Default contract for all new residential and commercial cleaning partners.',
+        uploadedBy: admin.id,
+      },
+      {
+        title: 'Independent Contractor Policy',
+        fileUrl: '/uploads/templates/contractor-policy.pdf',
+        fileName: 'contractor-policy.pdf',
+        fileSize: 512000,
+        description: 'Mandatory safety and conduct guidelines for independent vendors.',
+        uploadedBy: admin.id,
+      },
+    ],
+  })
+
+  console.log('✅ Created 2 contract templates')
 
   // ==================== AUDIT LOGS ====================
   console.log('\n📊 Creating audit logs...')

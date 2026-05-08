@@ -5,6 +5,7 @@ declare module 'next-auth' {
   interface User {
     id: string
     role: string
+    permissions?: string | null
     guestBootstrap?: boolean
   }
 
@@ -14,6 +15,7 @@ declare module 'next-auth' {
       email: string
       name?: string | null
       role: string
+      permissions?: string | null
       guestBootstrap?: boolean
     }
   }
@@ -23,6 +25,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role: string
+    permissions?: string | null
     guestBootstrap?: boolean
   }
 }
