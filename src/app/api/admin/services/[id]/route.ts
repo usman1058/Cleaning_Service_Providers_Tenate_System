@@ -82,7 +82,7 @@ export async function GET(
 
     // Get trend data (last 6 months)
     const now = new Date()
-    const revenueTrend = []
+    const revenueTrend: any[] = []
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)

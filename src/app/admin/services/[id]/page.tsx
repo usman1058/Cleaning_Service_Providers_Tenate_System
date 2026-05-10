@@ -55,6 +55,8 @@ interface Service {
     totalRevenue: number
     activeAssignments: number
   }
+  revenueTrend?: any[]
+  statusDistribution?: any[]
 }
 
 export default function AdminServiceDetail() {

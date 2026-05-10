@@ -281,10 +281,10 @@ export default function MonitoringDetailPage() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">
-                  {assignment.vendor.vendorProfile.companyName[0]}
+                  {assignment.vendor.vendorProfile?.companyName?.[0] || assignment.vendor.name[0]}
                 </div>
                 <div>
-                  <p className="font-bold">{assignment.vendor.vendorProfile.companyName}</p>
+                  <p className="font-bold">{assignment.vendor.vendorProfile?.companyName || assignment.vendor.name}</p>
                   <p className="text-xs text-gray-500">{assignment.vendor.name}</p>
                 </div>
               </div>

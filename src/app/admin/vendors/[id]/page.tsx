@@ -49,6 +49,7 @@ import { Textarea } from '@/components/ui/textarea'
 
 interface VendorData {
   id: string
+  userId: string
   companyName: string
   businessType: string
   serviceLocations: string

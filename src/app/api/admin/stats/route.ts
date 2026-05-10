@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     const monthlyRevenue = completedThisMonth * 150
 
     // Get 6-month trend
-    const months = []
+    const months: any[] = []
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
