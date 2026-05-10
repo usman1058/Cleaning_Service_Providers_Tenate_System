@@ -28,6 +28,15 @@ export async function POST(
       )
     }
 
+    // Check if vendor exists
+    const vendor = await db.user.findUnique({ where: { id: vendorId } });
+    if (!vendor) {
+      return NextResponse.json(
+        { error: 'Vendor not found' },
+        { status: 400 }
+      );
+    }
+
     // Create assignment
     const assignment = await db.serviceAssignment.create({
       data: {
