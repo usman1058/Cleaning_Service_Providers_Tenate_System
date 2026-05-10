@@ -18,6 +18,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { CurrencySelector } from '@/components/shared/currency-selector'
+import { ThemeToggle } from '@/components/shared/theme-toggle'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -147,6 +148,7 @@ export function Navbar() {
           {/* CTA Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-3">
             <CurrencySelector />
+            <ThemeToggle />
             {status === 'loading' ? (
               <div className="h-10 w-24 bg-muted rounded-xl animate-pulse" />
             ) : session ? (
@@ -267,6 +269,10 @@ export function Navbar() {
                 <div className="flex justify-between items-center px-4 py-2 bg-muted/30 rounded-xl">
                   <span className="text-sm font-medium text-muted-foreground">Currency</span>
                   <CurrencySelector />
+                </div>
+                <div className="flex justify-between items-center px-4 py-2 bg-muted/30 rounded-xl">
+                  <span className="text-sm font-medium text-muted-foreground">Theme</span>
+                  <ThemeToggle />
                 </div>
                 <div className="border-t border-border/30" />
                 <motion.div

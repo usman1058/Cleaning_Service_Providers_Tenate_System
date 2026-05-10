@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SessionProvider } from "@/components/providers";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { CurrencyProvider } from "@/components/providers/currency-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -27,9 +29,18 @@ export default function RootLayout({
       <body
           className={`${inter.variable} antialiased bg-background text-foreground font-sans`}
         >
-        <SessionProvider>
-          {children}
-        </SessionProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <CurrencyProvider>
+            <SessionProvider>
+              {children}
+            </SessionProvider>
+          </CurrencyProvider>
+        </ThemeProvider>
         <Toaster />
       </body>
     </html>

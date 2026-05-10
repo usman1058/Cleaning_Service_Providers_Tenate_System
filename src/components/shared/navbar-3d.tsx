@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { ThemeToggle } from '@/components/shared/theme-toggle'
 
 export function Navbar3D() {
   const pathname = usePathname()
@@ -127,6 +128,7 @@ export function Navbar3D() {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             {status === 'loading' ? (
               <div className="h-10 w-24 bg-white/10 rounded-xl animate-pulse" />
             ) : session ? (
@@ -256,6 +258,10 @@ export function Navbar3D() {
                 </motion.div>
               ))}
               <div className="pt-4 space-y-3">
+                <div className="flex justify-between items-center px-4 py-2 bg-white/5 rounded-xl mb-2">
+                  <span className="text-sm font-medium text-white/60">Theme</span>
+                  <ThemeToggle />
+                </div>
                 {session ? (
                   <>
                     <div className="px-4 py-3 bg-white/5 rounded-xl">
