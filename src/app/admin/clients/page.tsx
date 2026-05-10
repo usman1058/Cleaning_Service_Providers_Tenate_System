@@ -125,11 +125,18 @@ export default function AdminClientsPage() {
                   <div className="mt-4 pt-4 border-t">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-300">Total Spent: <span className="font-bold text-emerald-600">${(client.totalSpent ?? 0).toFixed(2)}</span></span>
-                      <Link href="/admin/receipts">
-                        <Button variant="outline" size="sm">
-                          View Receipts
-                        </Button>
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/admin/clients/${client.id}`}>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                        <Link href="/admin/receipts">
+                          <Button variant="outline" size="sm">
+                            View Receipts
+                          </Button>
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

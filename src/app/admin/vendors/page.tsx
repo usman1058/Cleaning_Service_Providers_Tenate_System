@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Users, Eye, Loader2, Search, CheckCircle2, XCircle } from 'lucide-react'
+import { useCurrency } from '@/components/providers/currency-provider'
+import { AdminDashboardLayout } from '@/components/admin/admin-dashboard-layout'
 
 interface VendorApplication {
   id: string
@@ -146,7 +148,7 @@ export default function AdminVendorsPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-0">
       {/* Page Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
@@ -225,8 +227,10 @@ export default function AdminVendorsPage() {
                         <Badge variant={app.status === 'PENDING' ? 'secondary' : 'default'}>
                           {app.status}
                         </Badge>
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/admin/vendors/${app.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
                         </Button>
                       </div>
                     </div>
@@ -289,11 +293,16 @@ export default function AdminVendorsPage() {
                           Team Size: {profile.teamSize} | Locations: {profile.serviceLocations}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        disabled={togglingId === profile.id}
-                        onClick={() => toggleVendorStatus(profile.id, profile.isActive)}
-                      >
+                        <Button variant="ghost" size="sm" asChild className="mr-2">
+                          <Link href={`/admin/vendors/${profile.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={togglingId === profile.id}
+                          onClick={() => toggleVendorStatus(profile.id, profile.isActive)}
+                        >
                         {togglingId === profile.id ? 'Updating...' : profile.isActive ? 'Deactivate' : 'Activate'}
                       </Button>
                     </div>

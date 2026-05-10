@@ -20,6 +20,27 @@ export async function GET(
 
     const service = await db.service.findUnique({
       where: { id },
+      include: {
+        category: true,
+        subcategory: true,
+        serviceRequests: {
+          take: 50,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: true,
+            assignment: {
+              include: {
+                vendor: {
+                  include: {
+                    vendorProfile: true
+                  }
+                }
+              }
+            },
+            receipt: true
+          }
+        }
+      }
     })
 
     if (!service) {
@@ -29,7 +50,71 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(service)
+    // Extract unique vendors who have performed this service
+    const vendorsMap = new Map()
+    service.serviceRequests.forEach(req => {
+      if (req.assignment?.vendor) {
+        const vendor = req.assignment.vendor
+        vendorsMap.set(vendor.id, {
+          id: vendor.id,
+          name: vendor.name,
+          email: vendor.email,
+          companyName: vendor.vendorProfile?.companyName || 'N/A',
+          status: vendor.vendorProfile?.status || 'N/A',
+          lastAssigned: req.createdAt
+        })
+      }
+    })
+
+    const vendors = Array.from(vendorsMap.values())
+
+    // Calculate stats
+    const stats = {
+      totalRequests: service.serviceRequests.length,
+      completedRequests: service.serviceRequests.filter(r => r.status === 'COMPLETED').length,
+      totalRevenue: service.serviceRequests
+        .filter(r => r.status === 'COMPLETED')
+        .reduce((sum, r) => sum + (service.startingPrice || 0), 0),
+      activeAssignments: service.serviceRequests.filter(r => 
+        ['ASSIGNED', 'IN_PROGRESS'].includes(r.status)
+      ).length
+    }
+
+    // Get trend data (last 6 months)
+    const now = new Date()
+    const revenueTrend = []
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
+      const monthName = date.toLocaleString('default', { month: 'short' })
+      
+      const count = service.serviceRequests.filter(r => 
+        r.status === 'COMPLETED' && 
+        new Date(r.updatedAt) >= date && 
+        new Date(r.updatedAt) < nextDate
+      ).length
+      
+      revenueTrend.push({
+        name: monthName,
+        total: count * (service.startingPrice || 0),
+      })
+    }
+
+    const statusDistribution = [
+      { name: 'Completed', total: service.serviceRequests.filter(r => r.status === 'COMPLETED').length },
+      { name: 'Pending', total: service.serviceRequests.filter(r => r.status === 'PENDING').length },
+      { name: 'Active', total: service.serviceRequests.filter(r => ['ASSIGNED', 'IN_PROGRESS'].includes(r.status)).length },
+      { name: 'Cancelled', total: service.serviceRequests.filter(r => r.status === 'CANCELLED').length },
+    ]
+
+    return NextResponse.json({
+      ...service,
+      vendors,
+      stats,
+      revenueTrend,
+      statusDistribution,
+      history: service.serviceRequests
+    })
   } catch (error) {
     console.error('Failed to fetch service:', error)
     return NextResponse.json(

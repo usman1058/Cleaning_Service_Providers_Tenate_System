@@ -54,6 +54,9 @@ export async function GET(
       scheduledDate: assignment.serviceRequest.scheduledDate?.toISOString(),
       status: assignment.status,
       vendorNotes: assignment.vendorNotes,
+      beforeImage: assignment.beforeImage,
+      afterImage: assignment.afterImage,
+      additionalImages: assignment.additionalImages,
     }
 
     return NextResponse.json(formattedAssignment)

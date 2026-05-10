@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
           select: {
             name: true,
             description: true,
+            startingPrice: true,
           },
         },
         receipt: {
@@ -59,6 +60,7 @@ export async function GET(request: NextRequest) {
       location: service.location,
       createdAt: service.createdAt.toISOString(),
       receiptStatus: service.receipt?.status,
+      price: service.service?.startingPrice || 0,
     }))
 
     return NextResponse.json(formattedServices)

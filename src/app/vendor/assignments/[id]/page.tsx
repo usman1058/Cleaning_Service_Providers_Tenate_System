@@ -28,6 +28,7 @@ interface Assignment {
   completedAt?: string
   beforeImage?: string
   afterImage?: string
+  additionalImages?: string // JSON array
 }
 
 export default function VendorAssignmentDetail() {
@@ -46,6 +47,8 @@ export default function VendorAssignmentDetail() {
   const [afterImage, setAfterImage] = useState<File | null>(null)
   const [beforePreview, setBeforePreview] = useState('')
   const [afterPreview, setAfterPreview] = useState('')
+  const [additionalImages, setAdditionalImages] = useState<(File | null)[]>([null, null, null, null])
+  const [additionalPreviews, setAdditionalPreviews] = useState<string[]>(['', '', '', ''])
 
   useEffect(() => {
     if (assignmentId) {
@@ -126,6 +129,31 @@ export default function VendorAssignmentDetail() {
     }
   }
 
+  const handleAdditionalImageChange = (index: number, file: File | null) => {
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size must be less than 5MB')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const newImages = [...additionalImages]
+        newImages[index] = file
+        setAdditionalImages(newImages)
+
+        const newPreviews = [...additionalPreviews]
+        newPreviews[index] = reader.result as string
+        setAdditionalPreviews(newPreviews)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -136,6 +164,10 @@ export default function VendorAssignmentDetail() {
       if (beforeImage) formData.append('beforeImage', beforeImage)
       if (afterImage) formData.append('afterImage', afterImage)
       if (notes) formData.append('notes', notes)
+
+      additionalImages.forEach((img, index) => {
+        if (img) formData.append(`additionalImage${index + 1}`, img)
+      })
 
       const response = await fetch(`/api/vendor/assignments/${assignmentId}/complete`, {
         method: 'POST',
@@ -446,6 +478,36 @@ export default function VendorAssignmentDetail() {
                         </div>
                       </div>
 
+                      {/* Additional Photos Section */}
+                      <div className="space-y-4 pt-4 border-t">
+                        <h4 className="font-bold text-gray-900 dark:text-white">Additional Proof Photos (Optional)</h4>
+                        <p className="text-xs text-gray-500">Provide more details for high-priority or deep cleaning services.</p>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          {[0, 1, 2, 3].map((index) => (
+                            <div key={index} className="space-y-2">
+                              <Label htmlFor={`extra-${index}`} className="text-[10px] uppercase font-bold text-gray-500">Photo {index + 1}</Label>
+                              <div 
+                                className="relative border-2 border-dashed rounded-lg h-24 flex items-center justify-center bg-gray-50 dark:bg-gray-800 hover:border-emerald-500 transition-colors cursor-pointer overflow-hidden"
+                                onClick={() => document.getElementById(`extra-${index}`)?.click()}
+                              >
+                                {additionalPreviews[index] ? (
+                                  <img src={additionalPreviews[index]} alt="Preview" className="w-full h-full object-cover" />
+                                ) : (
+                                  <Camera className="h-6 w-6 text-gray-400" />
+                                )}
+                                <input
+                                  id={`extra-${index}`}
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => handleAdditionalImageChange(index, e.target.files?.[0] || null)}
+                                />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="notes">Completion Notes</Label>
                         <Textarea
@@ -514,6 +576,19 @@ export default function VendorAssignmentDetail() {
                           </div>
                         )}
                       </div>
+
+                      {assignment.additionalImages && JSON.parse(assignment.additionalImages).length > 0 && (
+                        <div className="pt-4 border-t">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Additional Proof Photos</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            {JSON.parse(assignment.additionalImages).map((url: string, idx: number) => (
+                              <div key={idx} className="border rounded-lg overflow-hidden h-24">
+                                <img src={url} alt={`Extra ${idx}`} className="w-full h-full object-cover" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {assignment.vendorNotes && (
                         <div>

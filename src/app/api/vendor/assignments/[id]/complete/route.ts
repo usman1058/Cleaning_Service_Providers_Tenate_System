@@ -96,15 +96,19 @@ export async function POST(
     const beforeFileName = `before-${assignmentId}-${Date.now()}${beforeImage!.name.match(/\.[0-9a-z]+$/i)?.[0] || '.jpg'}`
     const afterFileName = `after-${assignmentId}-${Date.now()}${afterImage!.name.match(/\.[0-9a-z]+$/i)?.[0] || '.jpg'}`
 
-    const beforeImagePath = join(uploadsDir, beforeFileName)
-    const afterImagePath = join(uploadsDir, afterFileName)
+    await writeFile(join(uploadsDir, beforeFileName), Buffer.from(await beforeImage!.arrayBuffer()))
+    await writeFile(join(uploadsDir, afterFileName), Buffer.from(await afterImage!.arrayBuffer()))
 
-    // Convert files to ArrayBuffer and save
-    const beforeBuffer = Buffer.from(await beforeImage!.arrayBuffer())
-    const afterBuffer = Buffer.from(await afterImage!.arrayBuffer())
-
-    await writeFile(beforeImagePath, beforeBuffer)
-    await writeFile(afterImagePath, afterBuffer)
+    // Handle additional images
+    const additionalImageUrls: string[] = []
+    for (let i = 1; i <= 4; i++) {
+      const extraImg = formData.get(`additionalImage${i}`) as File | null
+      if (extraImg && extraImg.size > 0) {
+        const fileName = `extra-${i}-${assignmentId}-${Date.now()}${extraImg.name.match(/\.[0-9a-z]+$/i)?.[0] || '.jpg'}`
+        await writeFile(join(uploadsDir, fileName), Buffer.from(await extraImg.arrayBuffer()))
+        additionalImageUrls.push(`/uploads/service-images/${fileName}`)
+      }
+    }
 
     // Update assignment status to COMPLETED
     await db.serviceAssignment.update({
@@ -113,6 +117,9 @@ export async function POST(
         status: 'COMPLETED',
         completedAt: new Date(),
         vendorNotes: notes || '',
+        beforeImage: `/uploads/service-images/${beforeFileName}`,
+        afterImage: `/uploads/service-images/${afterFileName}`,
+        additionalImages: JSON.stringify(additionalImageUrls),
       },
     })
 

@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { CurrencySelector } from '@/components/shared/currency-selector'
 
 export function Navbar() {
   const pathname = usePathname()
@@ -145,6 +146,7 @@ export function Navbar() {
 
           {/* CTA Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-3">
+            <CurrencySelector />
             {status === 'loading' ? (
               <div className="h-10 w-24 bg-muted rounded-xl animate-pulse" />
             ) : session ? (
@@ -261,6 +263,10 @@ export function Navbar() {
                     placeholder="Search services..."
                     className="w-full pl-10 pr-4 py-2.5 bg-muted/50 border border-border/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
                   />
+                </div>
+                <div className="flex justify-between items-center px-4 py-2 bg-muted/30 rounded-xl">
+                  <span className="text-sm font-medium text-muted-foreground">Currency</span>
+                  <CurrencySelector />
                 </div>
                 <div className="border-t border-border/30" />
                 <motion.div

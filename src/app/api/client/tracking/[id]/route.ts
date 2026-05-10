@@ -100,6 +100,10 @@ export async function GET(
           companyName: serviceRequest.assignment.vendor.vendorProfile?.companyName || '',
         },
         vendorNotes: serviceRequest.assignment.vendorNotes,
+        beforeImage: serviceRequest.assignment.beforeImage,
+        afterImage: serviceRequest.assignment.afterImage,
+        startedAt: serviceRequest.assignment.startedAt?.toISOString(),
+        completedAt: serviceRequest.assignment.completedAt?.toISOString(),
       } : null,
     }
 

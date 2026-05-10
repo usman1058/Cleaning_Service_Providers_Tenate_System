@@ -1,6 +1,8 @@
+'use client'
+
 import { VendorDashboardLayout } from '@/components/vendor/vendor-dashboard-layout'
 
-export default function VendorAssignmentsLayout({
+export default function VendorRootLayout({
   children,
 }: {
   children: React.ReactNode

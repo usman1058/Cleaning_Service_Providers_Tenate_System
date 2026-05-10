@@ -8,6 +8,7 @@ import { Sparkles, Home, Briefcase, Calendar, FileText, Bell, User, LogOut, Menu
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { CurrencySelector } from '@/components/shared/currency-selector'
 
 interface SidebarItem {
   title: string
@@ -226,6 +227,7 @@ export function VendorDashboardLayout({ children }: { children: React.ReactNode 
             </div>
 
             <div className="flex items-center gap-2">
+              <CurrencySelector />
               <Button variant="ghost" size="icon" className="relative" asChild>
                 <Link href="/vendor/notifications">
                   <Bell className="h-5 w-5" />

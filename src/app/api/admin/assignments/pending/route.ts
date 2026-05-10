@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
         service: {
           select: {
             name: true,
+            startingPrice: true,
           },
         },
       },
@@ -40,6 +41,7 @@ export async function GET(request: NextRequest) {
       preferredTime: service.preferredTime,
       status: service.status,
       createdAt: service.createdAt.toISOString(),
+      price: service.service?.startingPrice || 0,
     }))
 
     return NextResponse.json(formattedServices)

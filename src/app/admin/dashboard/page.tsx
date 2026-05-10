@@ -8,6 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { LayoutDashboard, FileText, Users, CheckCircle2, AlertTriangle, Clock, Calendar, Loader2, TrendingUp, Search, X, AlertCircle, Users as UsersIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
+import { AdminDashboardLayout } from '@/components/admin/admin-dashboard-layout'
+import { useCurrency } from '@/components/providers/currency-provider'
+import { OverviewChart } from '@/components/admin/overview-chart'
 
 interface AdminStats {
   totalServices: number
@@ -21,6 +24,8 @@ interface AdminStats {
   openTickets: number
   pendingReviewTickets: number
   resolvedTickets: number
+  revenueTrend: { name: string; total: number }[]
+  topVendors: { id: string; name: string; companyName: string; completedJobs: number }[]
 }
 
 interface RecentActivity {
@@ -49,6 +54,7 @@ interface PendingReceiptBooking {
 }
 
 export default function AdminDashboard() {
+  const { convert } = useCurrency()
   const { data: session } = useSession()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
@@ -93,10 +99,10 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="p-8">
+      <div className="p-0">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 dark:bg-gray-800 rounded w-1/4"></div>
-          <div className="grid grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             {[...Array(5)].map((_, i) => (
               <div key={i} className="h-32 bg-gray-200 dark:bg-gray-800 rounded"></div>
             ))}
@@ -107,7 +113,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-0">
       {/* Page Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
@@ -226,7 +232,7 @@ export default function AdminDashboard() {
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${stats?.monthlyRevenue || 0}</div>
+            <div className="text-2xl font-bold">{convert(stats?.monthlyRevenue || 0)}</div>
             <p className="text-xs text-muted-foreground">This month</p>
           </CardContent>
         </Card>
@@ -254,12 +260,20 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Recent Activity & Quick Actions */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-1 gap-6 mb-8">
+        <OverviewChart 
+          data={stats?.revenueTrend || []} 
+          title="Revenue Overview" 
+          description="Monthly revenue trend for the last 6 months"
+        />
+      </div>
+
+      {/* Recent Activity, Top Vendors & Quick Actions */}
+      <div className="grid lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
+            <CardTitle className="text-lg">Recent Activity</CardTitle>
             <CardDescription>Latest platform events</CardDescription>
           </CardHeader>
           <CardContent>
@@ -276,12 +290,44 @@ export default function AdminDashboard() {
                       <p className="font-medium text-gray-900 dark:text-white text-sm">
                         {activity.title}
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
                         {activity.description}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {new Date(activity.createdAt).toLocaleString()}
-                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Top Vendors */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Top Vendors</CardTitle>
+            <CardDescription>Highest job completion</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {!stats?.topVendors || stats.topVendors.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4 italic">
+                  Not enough data yet
+                </p>
+              ) : (
+                stats.topVendors.map((vendor, i) => (
+                  <div key={vendor.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-100">
+                        #{i + 1}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{vendor.companyName}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{vendor.name}</p>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-sm font-bold text-emerald-600">{vendor.completedJobs}</p>
+                      <p className="text-[10px] uppercase text-muted-foreground">Jobs</p>
                     </div>
                   </div>
                 ))
@@ -293,53 +339,46 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <Card>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="text-lg">Quick Actions</CardTitle>
             <CardDescription>Common admin tasks</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <Link href="/admin/tickets">
-                <Button variant="outline" className="w-full justify-start">
-                  <X className="h-4 w-4 mr-2" />
-                  View All Tickets
-                  {stats?.openTickets && stats.openTickets > 0 && (
-                    <Badge className="ml-auto bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">{stats.openTickets}</Badge>
-                  )}
-                </Button>
-              </Link>
+          <CardContent className="space-y-3">
+            <Link href="/admin/tickets">
+              <Button variant="outline" className="w-full justify-start text-sm h-9">
+                <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
+                Support Tickets
+                {stats?.openTickets && stats.openTickets > 0 && (
+                  <Badge variant="destructive" className="ml-auto text-[10px] h-5">{stats.openTickets}</Badge>
+                )}
+              </Button>
+            </Link>
 
-              <Link href="/admin/receipts">
-                <Button variant="outline" className="w-full justify-start">
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Verify Pending Receipts {stats?.pendingReceipts && stats.pendingReceipts > 0 && (
-                    <Badge className="ml-auto bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">{stats.pendingReceipts}</Badge>
-                  )}
-                </Button>
-              </Link>
+            <Link href="/admin/receipts">
+              <Button variant="outline" className="w-full justify-start text-sm h-9">
+                <FileText className="h-4 w-4 mr-2 text-blue-500" />
+                Verify Receipts
+                {stats?.pendingReceipts && stats.pendingReceipts > 0 && (
+                  <Badge variant="secondary" className="ml-auto text-[10px] h-5">{stats.pendingReceipts}</Badge>
+                )}
+              </Button>
+            </Link>
 
-              <Link href="/admin/vendors">
-                <Button variant="outline" className="w-full justify-start">
-                  <Users className="h-4 w-4 mr-2" />
-                  Review Vendor Applications {stats?.pendingVendorApplications && stats.pendingVendorApplications > 0 && (
-                    <Badge className="ml-auto bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200">{stats.pendingVendorApplications}</Badge>
-                  )}
-                </Button>
-              </Link>
+            <Link href="/admin/vendors">
+              <Button variant="outline" className="w-full justify-start text-sm h-9">
+                <Users className="h-4 w-4 mr-2 text-emerald-500" />
+                Applications
+                {stats?.pendingVendorApplications && stats.pendingVendorApplications > 0 && (
+                  <Badge variant="outline" className="ml-auto text-[10px] h-5">{stats.pendingVendorApplications}</Badge>
+                )}
+              </Button>
+            </Link>
 
-              <Link href="/admin/services">
-                <Button variant="outline" className="w-full justify-start">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Manage Services
-                </Button>
-              </Link>
-
-              <Link href="/admin/assignments">
-                <Button variant="outline" className="w-full justify-start">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  View Assignments
-                </Button>
-              </Link>
-            </div>
+            <Link href="/admin/services">
+              <Button variant="outline" className="w-full justify-start text-sm h-9">
+                <LayoutDashboard className="h-4 w-4 mr-2 text-purple-500" />
+                Manage Services
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>

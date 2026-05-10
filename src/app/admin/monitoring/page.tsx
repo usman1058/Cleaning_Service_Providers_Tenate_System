@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Clock, MapPin, Calendar, Loader2, CheckCircle2, Image as ImageIcon } from 'lucide-react'
+import { Clock, MapPin, Calendar, Loader2, CheckCircle2, Image as ImageIcon, Eye } from 'lucide-react'
+import Link from 'next/link'
 
 interface LiveService {
   id: string
@@ -152,15 +153,15 @@ export default function AdminMonitoringPage() {
                   {(service.images ?? []).length > 0 && (
                     <div>
                       <p className="text-sm font-medium mb-2">Service Images</p>
-                      <div className="flex gap-4">
+                      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                         {(service.images ?? []).map((image, idx) => (
-                          <div key={idx} className="relative">
+                          <div key={idx} className="relative group cursor-pointer">
                             <img
                               src={image.url}
                               alt={`${image.type} image`}
-                              className="w-32 h-32 object-cover rounded-lg"
+                              className="w-full h-24 object-cover rounded-lg border hover:border-emerald-500 transition-colors"
                             />
-                            <Badge variant="outline" className="absolute top-2 left-2">
+                            <Badge variant="outline" className="absolute top-1 left-1 bg-white/80 backdrop-blur text-[8px] px-1">
                               {image.type}
                             </Badge>
                           </div>
@@ -169,20 +170,29 @@ export default function AdminMonitoringPage() {
                     </div>
                   )}
 
-                  {service.status === 'IN_PROGRESS' && (
-                    <Button
-                      onClick={() => handleComplete(service.id)}
-                      disabled={completingId === service.id}
-                      className="w-full bg-emerald-600 hover:bg-emerald-700"
-                    >
-                      {completingId === service.id ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                      )}
-                      {completingId === service.id ? 'Approving...' : 'Approve Completion'}
-                    </Button>
-                  )}
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    <Link href={`/admin/monitoring/${service.id}`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Full Details
+                      </Button>
+                    </Link>
+
+                    {service.status === 'IN_PROGRESS' && (
+                      <Button
+                        onClick={() => handleComplete(service.id)}
+                        disabled={completingId === service.id}
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                      >
+                        {completingId === service.id ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4 mr-2" />
+                        )}
+                        {completingId === service.id ? 'Approving...' : 'Approve Completion'}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>

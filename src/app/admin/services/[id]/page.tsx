@@ -10,7 +10,29 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Sparkles, Home, FileText, ArrowLeft, Save, Loader2, AlertTriangle, CheckCircle2, Calendar, Clock, TrendingUp, X } from 'lucide-react'
+import { FileText, Edit, Loader2, Save, Trash2, CheckCircle2, X, TrendingUp, Users, Clock, Star, DollarSign, Calendar, AlertTriangle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { AdminDashboardLayout } from '@/components/admin/admin-dashboard-layout'
+import { useCurrency } from '@/components/providers/currency-provider'
+import { OverviewChart } from '@/components/admin/overview-chart'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Progress } from '@/components/ui/progress'
+import { Camera, Image as ImageIcon } from 'lucide-react'
 
 interface Service {
   id: string
@@ -25,12 +47,20 @@ interface Service {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  vendors?: any[]
+  history?: any[]
+  stats?: {
+    totalRequests: number
+    completedRequests: number
+    totalRevenue: number
+    activeAssignments: number
+  }
 }
 
 export default function AdminServiceDetail() {
   const params = useParams()
   const router = useRouter()
-  const serviceSlug = params.id as string
+  const serviceId = params.id as string
 
   const [service, setService] = useState<Service | null>(null)
   const [loading, setLoading] = useState(true)
@@ -44,20 +74,20 @@ export default function AdminServiceDetail() {
     longDescription: '',
     startingPrice: '',
     duration: '',
-    coverage: '',
-    locations: '',
     isActive: true,
   })
 
+  const { convert } = useCurrency()
+
   useEffect(() => {
-    if (serviceSlug) {
+    if (serviceId) {
       fetchService()
     }
-  }, [serviceSlug])
+  }, [serviceId])
 
   const fetchService = async () => {
     try {
-      const response = await fetch(`/api/admin/services/${serviceSlug}`)
+      const response = await fetch(`/api/admin/services/${serviceId}`)
       if (response.ok) {
         const data = await response.json()
         setService(data)
@@ -67,8 +97,6 @@ export default function AdminServiceDetail() {
           longDescription: data.longDescription || '',
           startingPrice: data.startingPrice.toString(),
           duration: data.duration || '',
-          coverage: data.coverage || '',
-          locations: data.locations || '',
           isActive: data.isActive,
         })
       } else {
@@ -92,10 +120,8 @@ export default function AdminServiceDetail() {
     setSuccess('')
     setSaving(true)
 
-    if (!service) return
-
     try {
-      const response = await fetch(`/api/admin/services/${service.slug}`, {
+      const response = await fetch(`/api/admin/services/${serviceId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -103,9 +129,7 @@ export default function AdminServiceDetail() {
 
       if (response.ok) {
         setSuccess('Service updated successfully')
-        setTimeout(() => {
-          router.push('/admin/services')
-        }, 1500)
+        fetchService() // Refresh data
       } else {
         const data = await response.json()
         setError(data.error || 'Failed to update service')
@@ -118,209 +142,175 @@ export default function AdminServiceDetail() {
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
-      return
-    }
-
-    if (!service) return
+    if (!confirm('Are you sure? This will permanently delete the service.')) return
 
     setSaving(true)
     try {
-      const response = await fetch(`/api/admin/services/${service.slug}`, {
+      const response = await fetch(`/api/admin/services/${serviceId}`, {
         method: 'DELETE',
       })
 
       if (response.ok) {
-        setSuccess('Service deleted successfully')
-        setTimeout(() => {
-          router.push('/admin/services')
-        }, 1500)
+        router.push('/admin/services')
       } else {
         setError('Failed to delete service')
       }
     } catch (error) {
-      setError('An error occurred. Please try again.')
+      setError('An error occurred.')
     } finally {
       setSaving(false)
     }
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95">
-        <div className="container mx-auto px-4 py-4">
-          <Link href="/admin/dashboard">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-8 w-8 text-emerald-600" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Global Green Services
-              </h1>
-            </div>
-          </Link>
-        </div>
-      </header>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
+      </div>
+    )
+  }
 
-      <nav className="bg-white dark:bg-gray-950 border-b overflow-x-auto">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-4">
-            <Link href="/admin/dashboard" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <Home className="h-4 w-4" />
-              Overview
-            </Link>
-            <Link href="/admin/services" className="flex items-center gap-2 py-4 px-4 border-b-2 border-emerald-600 text-emerald-600 font-medium whitespace-nowrap">
-              <FileText className="h-4 w-4" />
-              Services
-            </Link>
-            <Link href="/admin/clients" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              Users
-            </Link>
-            <Link href="/admin/receipts" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <CheckCircle2 className="h-4 w-4" />
-              Receipt Verification
-            </Link>
-            <Link href="/admin/vendors" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              Users
-            </Link>
-            <Link href="/admin/assignments" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <Calendar className="h-4 w-4" />
-              Assignments
-            </Link>
-            <Link href="/admin/monitoring" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <Clock className="h-4 w-4" />
-              Monitoring
-            </Link>
-            <Link href="/admin/reports" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <TrendingUp className="h-4 w-4" />
-              Reports
-            </Link>
-            <Link href="/admin/tickets" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <X className="h-4 w-4" />
-              Support Tickets
-            </Link>
+  return (
+    <div className="p-0">
+        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="bg-emerald-100 dark:bg-emerald-900/30 p-2 rounded-lg">
+                <FileText className="h-6 w-6 text-emerald-600" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {service?.name || 'Service Details'}
+              </h1>
+              {service && (
+                <Badge variant={service.isActive ? 'default' : 'secondary'}>
+                  {service.isActive ? 'Active' : 'Inactive'}
+                </Badge>
+              )}
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Manage service configuration, view vendor performance, and tracking history.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={() => router.push('/admin/services')}>
+              Back to Services
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={saving}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Service
+            </Button>
           </div>
         </div>
-      </nav>
 
-      <section className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <Link href="/admin/services" className="inline-flex items-center text-emerald-600 hover:underline mb-6">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Services
-          </Link>
+        {service && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Total Requests</span>
+                  <FileText className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="text-2xl font-bold">{service.stats?.totalRequests || 0}</div>
+                <p className="text-xs text-muted-foreground mt-1">Lifetime bookings</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Total Revenue</span>
+                  <DollarSign className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="text-2xl font-bold">{convert(service.stats?.totalRevenue || 0)}</div>
+                <p className="text-xs text-muted-foreground mt-1">From completed jobs</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Active Jobs</span>
+                  <Clock className="h-4 w-4 text-orange-500" />
+                </div>
+                <div className="text-2xl font-bold">{service.stats?.activeAssignments || 0}</div>
+                <div className="mt-2">
+                   <Progress value={service.stats?.totalRequests ? ((service.stats.activeAssignments / service.stats.totalRequests) * 100) : 0} className="h-1" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-muted-foreground">Completion Rate</span>
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                </div>
+                <div className="text-2xl font-bold">
+                  {service.stats?.totalRequests ? Math.round((service.stats.completedRequests / service.stats.totalRequests) * 100) : 0}%
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Success percentage</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-          {loading ? (
-            <div className="text-center py-12">
-              <Loader2 className="h-12 w-12 animate-spin text-emerald-600 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-300">Loading service details...</p>
-            </div>
-          ) : service ? (
-            <>
-              {/* Messages */}
-              {error && (
-                <Alert variant="destructive" className="mb-6">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-              {success && (
-                <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 mb-6">
-                  <AlertDescription className="text-emerald-800 dark:text-emerald-200">
-                    {success}
-                  </AlertDescription>
-                </Alert>
-              )}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="bg-muted/50 p-1 border">
+            <TabsTrigger value="overview">Overview & Edit</TabsTrigger>
+            <TabsTrigger value="vendors">Vendors</TabsTrigger>
+            <TabsTrigger value="history">Assignment History</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
 
-              {/* Service Info */}
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <CardTitle>Edit Service</CardTitle>
-                      <CardDescription>
-                        Service ID: {service.id.slice(0, 8).toUpperCase()}
-                      </CardDescription>
+          <TabsContent value="overview">
+            <Card>
+              <CardHeader>
+                <CardTitle>Service Configuration</CardTitle>
+                <CardDescription>Update the basic details and pricing for this service.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {error && (
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-red-800 dark:text-red-200">{error}</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        service.isActive
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {service.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Created: {new Date(service.createdAt).toLocaleDateString()}
-                      </span>
+                  )}
+                  {success && (
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                      <p className="text-emerald-800 dark:text-emerald-200">{success}</p>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
+                  )}
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Service Name *</Label>
+                        <Label htmlFor="name">Service Name</Label>
                         <Input
                           id="name"
                           value={formData.name}
                           onChange={(e) => handleInputChange('name', e.target.value)}
-                          placeholder="e.g., Residential Cleaning"
+                          placeholder="e.g., Deep Kitchen Cleaning"
                           required
                         />
                       </div>
-
                       <div className="space-y-2">
-                        <Label htmlFor="slug">Service Slug</Label>
-                        <Input
-                          id="slug"
-                          value={service.slug}
-                          disabled
-                          className="bg-gray-100 dark:bg-gray-800"
-                        />
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Auto-generated from name. Cannot be changed.
-                        </p>
+                        <Label htmlFor="startingPrice">Starting Price (USD)</Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="startingPrice"
+                            type="number"
+                            className="pl-9"
+                            value={formData.startingPrice}
+                            onChange={(e) => handleInputChange('startingPrice', e.target.value)}
+                            placeholder="0.00"
+                            required
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Short Description *</Label>
-                      <Textarea
-                        id="description"
-                        value={formData.description}
-                        onChange={(e) => handleInputChange('description', e.target.value)}
-                        placeholder="Brief description shown in service cards"
-                        rows={3}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="longDescription">Long Description</Label>
-                      <Textarea
-                        id="longDescription"
-                        value={formData.longDescription}
-                        onChange={(e) => handleInputChange('longDescription', e.target.value)}
-                        placeholder="Detailed description shown in service detail page"
-                        rows={6}
-                      />
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="startingPrice">Starting Price ($) *</Label>
-                        <Input
-                          id="startingPrice"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.startingPrice}
-                          onChange={(e) => handleInputChange('startingPrice', parseFloat(e.target.value))}
-                          placeholder="99.99"
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="duration">Duration</Label>
+                        <Label htmlFor="duration">Estimated Duration</Label>
                         <Input
                           id="duration"
                           value={formData.duration}
@@ -328,126 +318,241 @@ export default function AdminServiceDetail() {
                           placeholder="e.g., 2-3 hours"
                         />
                       </div>
+                      <div className="flex items-center gap-2 pt-4">
+                        <input
+                          type="checkbox"
+                          id="isActive"
+                          checked={formData.isActive}
+                          onChange={(e) => handleInputChange('isActive', e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-600"
+                        />
+                        <Label htmlFor="isActive">Service is active and visible to clients</Label>
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="coverage">Coverage Notes</Label>
-                      <Textarea
-                        id="coverage"
-                        value={formData.coverage}
-                        onChange={(e) => handleInputChange('coverage', e.target.value)}
-                        placeholder="Coverage and service area information"
-                        rows={4}
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Short Description</Label>
+                        <Textarea
+                          id="description"
+                          value={formData.description}
+                          onChange={(e) => handleInputChange('description', e.target.value)}
+                          placeholder="Brief summary for service cards..."
+                          rows={3}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="longDescription">Full Description</Label>
+                        <Textarea
+                          id="longDescription"
+                          value={formData.longDescription}
+                          onChange={(e) => handleInputChange('longDescription', e.target.value)}
+                          placeholder="Detailed information for service page..."
+                          rows={6}
+                        />
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="locations">Service Locations</Label>
-                      <Input
-                        id="locations"
-                        value={formData.locations}
-                        onChange={(e) => handleInputChange('locations', e.target.value)}
-                        placeholder="e.g., New York, Los Angeles, Chicago"
-                      />
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Comma-separated list of cities where this service is available
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-4 border-t">
-                      <input
-                        type="checkbox"
-                        id="isActive"
-                        checked={formData.isActive}
-                        onChange={(e) => handleInputChange('isActive', e.target.checked)}
-                        className="w-4 h-4"
-                      />
-                      <Label htmlFor="isActive" className="cursor-pointer">
-                        Service is active and visible to users
-                      </Label>
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4">
-                <Button
-                  type="button"
-                  onClick={() => router.push('/admin/services')}
-                  variant="outline"
-                  className="flex-1"
-                  disabled={saving}
-                >
-                  Cancel
-                </Button>
-
-                <Button
-                  type="submit"
-                  onClick={handleSubmit}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="mr-2 h-4 w-4" />
-                      Save Changes
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {/* Delete Service */}
-              <Card className="mt-6 border-red-200 dark:border-red-900">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                    <AlertTriangle className="h-5 w-5" />
-                    Danger Zone
-                  </CardTitle>
-                  <CardDescription>
-                    Deleting a service will remove it from all client-facing pages.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 dark:text-gray-300 mb-4">
-                    This action cannot be undone. Make sure you want to permanently delete this service.
-                  </p>
-                  <Button
-                    onClick={handleDelete}
-                    variant="destructive"
-                    disabled={saving}
-                    className="w-full sm:w-auto"
-                  >
-                    Delete Service
-                  </Button>
-                </CardContent>
-              </Card>
-            </>
-          ) : (
-            <Card>
-              <CardContent className="py-12 text-center">
-                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                  Service Not Found
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  The service you're looking for doesn't exist or has been deleted.
-                </p>
-                <Link href="/admin/services">
-                  <Button variant="outline" className="border-emerald-600 text-emerald-600 hover:bg-emerald-50">
-                    Back to Services
-                  </Button>
-                </Link>
+                  <div className="flex justify-end pt-6 border-t">
+                    <Button
+                      type="submit"
+                      disabled={saving}
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
               </CardContent>
             </Card>
-          )}
-        </div>
-      </section>
+          </TabsContent>
+
+          <TabsContent value="vendors">
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Vendors for this Service</CardTitle>
+                <CardDescription>Vendors who have been assigned to this service recently.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!service?.vendors || service.vendors.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No vendors have performed this service yet.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Vendor / Company</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Last Assigned</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {service.vendors.map((vendor: any) => (
+                        <TableRow key={vendor.id}>
+                          <TableCell>
+                            <div className="font-medium">{vendor.companyName}</div>
+                            <div className="text-xs text-muted-foreground">{vendor.name}</div>
+                          </TableCell>
+                          <TableCell>{vendor.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={vendor.status === 'APPROVED' ? 'default' : 'secondary'}>
+                              {vendor.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {new Date(vendor.lastAssigned).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/admin/vendors/${vendor.id}`}>View Profile</Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="history">
+            <Card>
+              <CardHeader>
+                <CardTitle>Assignment History</CardTitle>
+                <CardDescription>Detailed log of all bookings for this service.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {!service?.history || service.history.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No assignment history found.</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Vendor</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Proof</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {service.history.map((req: any) => (
+                        <TableRow key={req.id}>
+                          <TableCell>
+                            <div className="font-medium">{req.user?.name}</div>
+                            <div className="text-xs text-muted-foreground">{req.email}</div>
+                          </TableCell>
+                          <TableCell>
+                            {req.assignment?.vendor?.vendorProfile?.companyName || 'Not Assigned'}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {new Date(req.createdAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              req.status === 'COMPLETED' ? 'default' :
+                              req.status === 'CANCELLED' ? 'destructive' :
+                              'secondary'
+                            }>
+                              {req.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {req.assignment?.beforeImage ? (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 px-2 text-emerald-600">
+                                    <Camera className="h-4 w-4 mr-1" />
+                                    View Proof
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-3xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Completion Proof - {req.user?.name}</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="grid grid-cols-2 gap-4 mt-4">
+                                    <div className="space-y-2">
+                                      <p className="text-sm font-medium text-muted-foreground">Before Photo</p>
+                                      <div className="aspect-video relative rounded-lg overflow-hidden border bg-muted">
+                                        <img 
+                                          src={req.assignment.beforeImage} 
+                                          alt="Before" 
+                                          className="object-cover w-full h-full"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                      <p className="text-sm font-medium text-muted-foreground">After Photo</p>
+                                      <div className="aspect-video relative rounded-lg overflow-hidden border bg-muted">
+                                        <img 
+                                          src={req.assignment.afterImage} 
+                                          alt="After" 
+                                          className="object-cover w-full h-full"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {req.assignment.vendorNotes && (
+                                    <div className="mt-4 p-3 bg-muted rounded-lg">
+                                      <p className="text-sm font-medium mb-1">Vendor Notes:</p>
+                                      <p className="text-sm text-muted-foreground">{req.assignment.vendorNotes}</p>
+                                    </div>
+                                  )}
+                                </DialogContent>
+                              </Dialog>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">No Proof</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {convert(service.startingPrice)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <OverviewChart 
+                data={service?.revenueTrend || []} 
+                title="Revenue Trend" 
+                description="Monthly revenue for this specific service over the last 6 months"
+              />
+              <OverviewChart 
+                data={service?.statusDistribution || []} 
+                title="Status Distribution" 
+                description="Distribution of all requests by their current status"
+                color="#3b82f6"
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
     </div>
   )
 }

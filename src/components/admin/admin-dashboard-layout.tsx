@@ -8,6 +8,7 @@ import { Sparkles, LayoutDashboard, Home, FileText, Users, User, CheckCircle2, C
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { CurrencySelector } from '@/components/shared/currency-selector'
 
 interface SidebarItem {
   title: string
@@ -273,6 +274,7 @@ export function AdminDashboardLayout({ children }: { children: React.ReactNode }
             </div>
 
             <div className="flex items-center gap-2">
+              <CurrencySelector />
               <Button variant="ghost" size="icon" className="relative" asChild>
                 <Link href="/admin/notifications">
                   <Bell className="h-5 w-5" />

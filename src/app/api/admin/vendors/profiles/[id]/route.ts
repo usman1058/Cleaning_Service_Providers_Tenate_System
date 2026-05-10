@@ -3,6 +3,55 @@ import { db } from '@/lib/db'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id || session.user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const vendor = await db.vendorProfile.findUnique({
+      where: { id },
+      include: {
+        user: {
+          include: {
+            serviceAssignments: {
+              take: 20,
+              orderBy: { createdAt: 'desc' },
+              include: {
+                serviceRequest: {
+                  include: {
+                    service: true,
+                    receipt: true
+                  }
+                }
+              }
+            },
+            vendorApplications: {
+              take: 1,
+              orderBy: { createdAt: 'desc' }
+            }
+          }
+        }
+      }
+    })
+
+    if (!vendor) {
+      return NextResponse.json({ error: 'Vendor not found' }, { status: 404 })
+    }
+
+    return NextResponse.json(vendor)
+  } catch (error) {
+    console.error('Failed to fetch vendor:', error)
+    return NextResponse.json({ error: 'Failed to fetch vendor' }, { status: 500 })
+  }
+}
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

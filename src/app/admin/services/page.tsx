@@ -8,7 +8,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { FileText, Plus, Edit, Loader2, Search, X, Percent, Star, Folder, FolderOpen } from 'lucide-react'
+import { FileText, Plus, Edit, Loader2, Search, X, Percent, Star, Folder, FolderOpen, Eye } from 'lucide-react'
+import Link from 'next/link'
+import { useCurrency } from '@/components/providers/currency-provider'
 
 interface ServiceCategory {
   id: string
@@ -51,6 +53,7 @@ interface Service {
 }
 
 export default function AdminServicesPage() {
+  const { convert, symbol } = useCurrency()
   const [isEditing, setIsEditing] = useState(false)
   const [editingService, setEditingService] = useState<Service | null>(null)
 
@@ -312,7 +315,7 @@ export default function AdminServicesPage() {
     } else if (service.discountType === 'FIXED_AMOUNT') {
       return (
         <Badge className="bg-red-100 text-red-800 border-red-200 dark:bg-red-900/20 dark:text-red-200">
-          ${(service.discountValue ?? 0).toFixed(2)} OFF
+          {convert(service.discountValue ?? 0)} OFF
         </Badge>
       )
     }
@@ -351,7 +354,7 @@ export default function AdminServicesPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-0">
       {/* Page Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
@@ -504,7 +507,7 @@ export default function AdminServicesPage() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="startingPrice">Starting Price ($) *</Label>
+                      <Label htmlFor="startingPrice">Starting Price ({symbol}) *</Label>
                       <Input
                         id="startingPrice"
                         name="startingPrice"
@@ -695,7 +698,7 @@ export default function AdminServicesPage() {
                           {service.description}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                          <span className="font-medium">Starting Price:</span> ${(service.startingPrice ?? 0).toFixed(2)}
+                          <span className="font-medium">Starting Price:</span> {convert(service.startingPrice ?? 0)}
                           {service.duration && ` | Duration: ${service.duration}`}
                         </p>
                         {service.locations && (
@@ -705,6 +708,11 @@ export default function AdminServicesPage() {
                         )}
                       </div>
                       <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/admin/services/${service.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"

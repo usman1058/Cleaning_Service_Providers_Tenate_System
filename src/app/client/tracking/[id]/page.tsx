@@ -64,6 +64,8 @@ interface TimelineEvent {
   icon: any
 }
 
+import { ClientDashboardLayout } from '@/components/client/client-dashboard-layout'
+
 export default function ClientTracking() {
   const params = useParams()
   const router = useRouter()
@@ -228,7 +230,7 @@ export default function ClientTracking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-emerald-600 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-300">Loading tracking information...</p>
@@ -239,104 +241,31 @@ export default function ClientTracking() {
 
   if (!trackingData) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <Link href="/">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-8 w-8 text-emerald-600" />
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Global Green Services
-                </h1>
-              </div>
+      <section className="py-16">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              Service Not Found
+            </h3>
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
+              The service you're looking for doesn't exist or has been removed.
+            </p>
+            <Link href="/client/dashboard">
+              <Button className="bg-emerald-600 hover:bg-emerald-700">
+                Back to Dashboard
+              </Button>
             </Link>
-            <nav className="flex items-center gap-4">
-              <Link href="/">
-                <Button variant="ghost">Home</Button>
-              </Link>
-              <Link href="/client/dashboard">
-                <Button variant="ghost">Back to Dashboard</Button>
-              </Link>
-            </nav>
-          </div>
-        </header>
-
-        <section className="container mx-auto px-4 py-16">
-          <Card>
-            <CardContent className="py-12 text-center">
-              <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                Service Not Found
-              </h3>
-              <p className="text-gray-600 dark:text-gray-300 mb-6">
-                The service you're looking for doesn't exist or has been removed.
-              </p>
-              <Link href="/client/dashboard">
-                <Button className="bg-emerald-600 hover:bg-emerald-700">
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </section>
-      </div>
+          </CardContent>
+        </Card>
+      </section>
     )
   }
 
   const timeline = getTimeline()
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/95">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-8 w-8 text-emerald-600" />
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                Global Green Services
-              </h1>
-            </div>
-          </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/client/dashboard">
-              <Button variant="ghost">Back to Dashboard</Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <nav className="bg-white dark:bg-gray-950 border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-4">
-            <Link href="/client/dashboard" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <Home className="h-4 w-4" />
-              Overview
-            </Link>
-            <Link href="/client/services" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <FileText className="h-4 w-4" />
-              My Services
-            </Link>
-            <Link href="/client/tracking" className="flex items-center gap-2 py-4 px-4 border-b-2 border-emerald-600 text-emerald-600 font-medium whitespace-nowrap">
-              <TrendingUp className="h-4 w-4" />
-              Tracking
-            </Link>
-            <Link href="/client/receipts" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <Clock className="h-4 w-4" />
-              Receipts
-            </Link>
-            <Link href="/client/notifications" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <Bell className="h-4 w-4" />
-              Notifications
-            </Link>
-            <Link href="/client/profile" className="flex items-center gap-2 py-4 px-4 text-gray-600 dark:text-gray-300 hover:text-emerald-600 whitespace-nowrap">
-              <User className="h-4 w-4" />
-              Profile
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <section className="container mx-auto px-4 py-8">
+    <section className="container mx-auto px-4 py-8">
         <div className="mb-6">
           <Link href="/client/services" className="inline-flex items-center text-emerald-600 hover:underline">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -727,13 +656,6 @@ export default function ClientTracking() {
             </Card>
           </Link>
         </div>
-      </section>
-
-      <footer className="bg-gray-900 text-white py-8">
-        <div className="container mx-auto px-4 text-center text-gray-400">
-          <p>© {new Date().getFullYear()} Global Green Services. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
+    </section>
   )
 }

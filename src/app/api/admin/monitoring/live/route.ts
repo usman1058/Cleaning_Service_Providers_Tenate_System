@@ -52,7 +52,11 @@ export async function GET(request: NextRequest) {
       status: assignment.status,
       startedAt: assignment.createdAt.toISOString(),
       scheduledDate: assignment.serviceRequest.scheduledDate?.toISOString() || assignment.serviceRequest.preferredDate?.toISOString() || new Date().toISOString(),
-      images: [], // Images feature not yet implemented
+      images: [
+        ...(assignment.beforeImage ? [{ type: 'Before', url: assignment.beforeImage }] : []),
+        ...(assignment.afterImage ? [{ type: 'After', url: assignment.afterImage }] : []),
+        ...(assignment.additionalImages ? (JSON.parse(assignment.additionalImages) as string[]).map((url, idx) => ({ type: `Extra ${idx + 1}`, url })) : [])
+      ],
     }))
 
     return NextResponse.json(formattedServices)

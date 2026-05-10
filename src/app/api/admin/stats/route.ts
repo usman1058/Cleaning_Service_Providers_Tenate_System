@@ -67,8 +67,72 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Estimate monthly revenue (you can enhance this with actual pricing data)
-    const monthlyRevenue = completedThisMonth * 150 // Average revenue per job
+    // Estimate monthly revenue
+    const monthlyRevenue = completedThisMonth * 150
+
+    // Get 6-month trend
+    const months = []
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const nextDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 1)
+      const monthName = date.toLocaleString('default', { month: 'short' })
+      
+      const count = await db.serviceRequest.count({
+        where: {
+          status: 'COMPLETED',
+          updatedAt: {
+            gte: date,
+            lt: nextDate,
+          },
+        },
+      })
+      
+      months.push({
+        name: monthName,
+        total: count * 150, // Average revenue per job
+      })
+    }
+
+    // Get top performing vendors
+    const topVendors = await db.user.findMany({
+      where: {
+        role: 'VENDOR',
+        vendorProfile: {
+          status: 'APPROVED',
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        vendorProfile: {
+          select: {
+            companyName: true,
+          },
+        },
+        _count: {
+          select: {
+            serviceAssignments: {
+              where: {
+                status: 'COMPLETED',
+              },
+            },
+          },
+        },
+      },
+      take: 5,
+      orderBy: {
+        serviceAssignments: {
+          _count: 'desc',
+        },
+      },
+    })
+
+    const formattedTopVendors = topVendors.map(v => ({
+      id: v.id,
+      name: v.name,
+      companyName: v.vendorProfile?.companyName || v.name,
+      completedJobs: v._count.serviceAssignments,
+    }))
 
     return NextResponse.json({
       totalServices,
@@ -82,6 +146,8 @@ export async function GET(request: NextRequest) {
       openTickets,
       pendingReviewTickets,
       resolvedTickets,
+      revenueTrend: months,
+      topVendors: formattedTopVendors,
     })
   } catch (error) {
     console.error('Failed to fetch admin stats:', error)

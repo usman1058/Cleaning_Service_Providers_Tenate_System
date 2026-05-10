@@ -5,7 +5,22 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Calendar, MapPin, Clock, Loader2, Check, CheckCircle2 } from 'lucide-react'
+import { 
+  Calendar, 
+  MapPin, 
+  Clock, 
+  Loader2, 
+  Check, 
+  CheckCircle2, 
+  UserPlus, 
+  Search,
+  Filter,
+  AlertCircle,
+  Briefcase
+} from 'lucide-react'
+import { AdminDashboardLayout } from '@/components/admin/admin-dashboard-layout'
+import { useCurrency } from '@/components/providers/currency-provider'
+import { Input } from '@/components/ui/input'
 
 interface Service {
   id: string
@@ -17,22 +32,26 @@ interface Service {
   preferredTime: string
   status: string
   createdAt: string
+  price: number
 }
 
 interface Vendor {
   id: string
+  userId: string
   companyName: string
   serviceLocations: string
   isActive: boolean
 }
 
 export default function AdminAssignmentsPage() {
+  const { convert } = useCurrency()
   const [services, setServices] = useState<Service[]>([])
   const [vendors, setVendors] = useState<Vendor[]>([])
   const [loading, setLoading] = useState(true)
   const [assignments, setAssignments] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
   const [assigningId, setAssigningId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     fetchData()
@@ -93,106 +112,169 @@ export default function AdminAssignmentsPage() {
     }
   }
 
-  return (
-    <div className="p-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Calendar className="h-8 w-8 text-emerald-600" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Service Assignments
-          </h1>
-        </div>
-        <p className="text-gray-600 dark:text-gray-400">
-          Assign verified services to approved vendors
-        </p>
+  const filteredServices = services.filter(s => 
+    s.serviceName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.clientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    s.location.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
       </div>
+    )
+  }
 
-      {/* Services List */}
-      {error && <p className="mb-4 text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {loading ? (
-        <div className="text-center py-12">
-          <Loader2 className="h-12 w-12 animate-spin text-emerald-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
-      ) : services.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <Calendar className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              No Pending Assignments
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300">
-              All verified services have been assigned to vendors.
+  return (
+    <div className="p-0">
+        {/* Page Header */}
+        <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Service Assignments</h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Assign verified service requests to available and approved vendors.
             </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {services.map((service) => (
-            <Card key={service.id} className="border-emerald-200 dark:border-emerald-800">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                      {service.serviceName}
-                    </CardTitle>
-                    <CardDescription className="mt-2">
-                      {service.clientName} - {service.clientEmail}
-                    </CardDescription>
-                  </div>
-                  <Badge>Verified</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                      <MapPin className="h-4 w-4" />
-                      <span>{service.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                      <Clock className="h-4 w-4" />
-                      <span>{new Date(service.preferredDate).toLocaleDateString()} at {service.preferredTime}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Assign Vendor</label>
-                    <Select
-                      value={assignments[service.id] || ''}
-                      onValueChange={(value) => setAssignments({ ...assignments, [service.id]: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a vendor" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {vendors
-                          .filter(v => v.isActive)
-                          .map((vendor) => (
-                            <SelectItem key={vendor.id} value={vendor.id}>
-                              {vendor.companyName} ({vendor.serviceLocations})
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <Button
-                    onClick={() => handleAssign(service.id, assignments[service.id])}
-                    disabled={!assignments[service.id] || assigningId === service.id}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    <Check className="h-4 w-4 mr-2" />
-                    {assigningId === service.id ? 'Assigning...' : 'Assign Service'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="bg-emerald-100 dark:bg-emerald-900/30 px-4 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium uppercase tracking-wider">Unassigned Requests</p>
+              <p className="text-2xl font-bold text-emerald-800 dark:text-emerald-300">{services.length}</p>
+            </div>
+          </div>
         </div>
-      )}
+
+        {/* Filters */}
+        <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Search by service, client or location..." 
+              className="pl-10"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Button variant="outline">
+            <Filter className="h-4 w-4 mr-2" />
+            More Filters
+          </Button>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+            <p className="text-red-800 dark:text-red-200">{error}</p>
+          </div>
+        )}
+
+        {filteredServices.length === 0 ? (
+          <Card className="border-dashed border-2">
+            <CardContent className="py-20 text-center">
+              <div className="bg-gray-100 dark:bg-gray-800 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Briefcase className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">No Pending Assignments</h3>
+              <p className="text-gray-500 dark:text-gray-400 max-w-sm mx-auto">
+                All verified service requests have been assigned. New requests will appear here once verified.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid gap-6">
+            {filteredServices.map((service) => (
+              <Card key={service.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                <div className="flex flex-col lg:flex-row">
+                  <div className="flex-1 p-6 border-b lg:border-b-0 lg:border-r">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">{service.serviceName}</h3>
+                        <p className="text-sm text-emerald-600 font-medium">Value: {convert(service.price)}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-100 uppercase text-[10px]">
+                        Verified
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-4 w-4 text-gray-400 mt-1" />
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Location</p>
+                          <p className="text-sm">{service.location}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-4 w-4 text-gray-400 mt-1" />
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Requested Date</p>
+                          <p className="text-sm">
+                            {service.preferredDate ? new Date(service.preferredDate).toLocaleDateString() : 'TBD'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Clock className="h-4 w-4 text-gray-400 mt-1" />
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Time Slot</p>
+                          <p className="text-sm">{service.preferredTime}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="h-4 w-4 text-gray-400 mt-1" />
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">Client</p>
+                          <p className="text-sm font-medium">{service.clientName}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="w-full lg:w-96 bg-gray-50 dark:bg-gray-900/40 p-6 flex flex-col justify-center gap-4">
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold uppercase text-gray-500 tracking-wider">Assign Vendor</p>
+                      <Select 
+                        onValueChange={(val) => setAssignments({ ...assignments, [service.id]: val })}
+                        value={assignments[service.id] || ''}
+                      >
+                        <SelectTrigger className="bg-white dark:bg-gray-800 h-11">
+                          <SelectValue placeholder="Select a vendor..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {vendors.length === 0 ? (
+                            <SelectItem value="none" disabled>No vendors available</SelectItem>
+                          ) : (
+                            vendors.map((vendor) => (
+                              <SelectItem key={vendor.userId} value={vendor.userId}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{vendor.companyName}</span>
+                                  <span className="text-[10px] text-gray-500">{vendor.serviceLocations || 'All Regions'} • {vendor.isActive ? 'Active' : 'Inactive'}</span>
+                                </div>
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <Button 
+                      className="w-full h-11 bg-emerald-600 hover:bg-emerald-700" 
+                      onClick={() => handleAssign(service.id, assignments[service.id])}
+                      disabled={!assignments[service.id] || assigningId === service.id}
+                    >
+                      {assigningId === service.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      ) : (
+                        <UserPlus className="h-4 w-4 mr-2" />
+                      )}
+                      Confirm Assignment
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
     </div>
   )
 }
